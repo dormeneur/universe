@@ -35,9 +35,16 @@ No commission, no wallet, no payment handling anywhere in the system. Money betw
 
 **No code yet. That's on purpose.**
 
-The [PRD](docs/PRD.md) is done — scope, data model, architecture, risk register, and a phased roadmap with hard gates between phases. It exists because the original pitch was four simultaneous marketplaces on one campus, which is the most reliable way to build nothing at all.
+The plan is done — scope, architecture, module boundaries, and a phased build order with hard gates. It exists because the original pitch was four simultaneous marketplaces on one campus, which is the most reliable way to build nothing at all.
 
 The four-modules-at-once version got argued down to one wedge that has to earn the rest.
+
+| Doc | What it settles |
+|---|---|
+| [PRD](docs/PRD.md) | Scope, requirements, non-goals, risk register |
+| [Architecture](docs/ARCHITECTURE.md) | Modules, layering, boundaries, SOLID/DRY in practice |
+| [Engineering roadmap](docs/ENGINEERING_ROADMAP.md) | Build order, phase gates, definition of done |
+| [ADRs](docs/adr/) | Why the non-obvious calls were made |
 
 ---
 
@@ -59,9 +66,13 @@ If a gate isn't met, the work is to fix that phase. Not to start the next one.
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Postgres · Drizzle · Auth.js — GitHub OAuth, read scopes only, forever.
+Next.js (App Router) · TypeScript strict · Postgres · Drizzle · Auth.js — GitHub OAuth, read scopes only, forever.
+
+Modular monolith. Ten feature modules, each with one public entrance and hexagonal layering inside. Business rules import no framework, so they test in under a millisecond. Boundaries are enforced by `dependency-cruiser` in CI — architecture that lives only in a document is decoration.
 
 No credentials for any third-party service are stored anywhere in this system. There is no table for them. That absence is a requirement, not an oversight.
+
+Four project skills in [`.claude/skills/`](.claude/skills/) carry the working rules — module architecture, code standards, database changes, testing strategy — so they apply while code is being written rather than at review time.
 
 ---
 
