@@ -92,15 +92,31 @@ export default tseslint.config(
           ],
         },
       ],
-      // Domain rules are pure: no clocks, no randomness, no I/O.
-      'no-restricted-globals': [
-        'error',
-        { name: 'Date', message: 'Take a Clock instead — see src/shared/clock.ts.' },
-      ],
+      // Domain rules are pure. What must not happen here is *reading the
+      // current time* — constructing a Date from an instant already passed in
+      // is fine, and `Date` as a type annotation obviously is too. So ban the
+      // two expressions that reach for "now" rather than the identifier.
       'no-restricted-properties': [
         'error',
-        { object: 'Date', property: 'now', message: 'Take a Clock instead.' },
-        { object: 'Math', property: 'random', message: 'Take an IdGenerator instead.' },
+        {
+          object: 'Date',
+          property: 'now',
+          message: 'Take a Clock and pass the instant in — see src/shared/clock.ts.',
+        },
+        {
+          object: 'Math',
+          property: 'random',
+          message: 'Take an IdGenerator instead — see src/shared/id.ts.',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message:
+            'new Date() reads the wall clock. Take a Clock and pass the instant in, so the rule ' +
+            'can be tested at exact boundaries — see src/shared/clock.ts.',
+        },
       ],
     },
   },

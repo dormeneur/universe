@@ -7,6 +7,14 @@
  * deliberately is fine, but record why in docs/adr/.
  */
 
+/**
+ * Files that are test code rather than shipped code. The layer-purity rules
+ * below do not apply to them: a domain test necessarily imports vitest and
+ * fixtures, and a contract suite necessarily imports both. Excluding them here
+ * rather than loosening the rules keeps the constraint sharp for real code.
+ */
+const TEST_CODE = ['\\.(test|spec)\\.tsx?$', '\\.contract\\.ts$', '/testing/'];
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -27,10 +35,10 @@ module.exports = {
         'domain/ holds rules that would still be true if the app were rewritten in Go. It may ' +
         'import only shared/ and its own module domain. Keeping it framework-free is what lets ' +
         'business rules be tested in under a millisecond with no database.',
-      from: { path: '^src/modules/[^/]+/domain' },
+      from: { path: '^src/modules/[^/]+/domain', pathNot: TEST_CODE },
       to: {
         pathNot: ['^src/modules/[^/]+/domain', '^src/shared'],
-        dependencyTypesNot: ['npm', 'core'],
+        dependencyTypesNot: ['npm', 'npm-dev', 'core'],
       },
     },
 
@@ -40,7 +48,7 @@ module.exports = {
       comment:
         'No Drizzle, React, or next/* inside domain/. Only zod and date-fns are allowed, because ' +
         'they are pure value libraries with no I/O.',
-      from: { path: '^src/modules/[^/]+/domain' },
+      from: { path: '^src/modules/[^/]+/domain', pathNot: TEST_CODE },
       to: {
         dependencyTypes: ['npm'],
         pathNot: ['^zod', '^date-fns', '^ulid'],
@@ -132,10 +140,10 @@ module.exports = {
       name: 'test-doubles-stay-in-tests',
       severity: 'error',
       comment:
-        'shared/testing holds fakes. Production code importing them means a fake could ship — ' +
-        'and that a real implementation is missing.',
-      from: { pathNot: '\\.(test|spec)\\.tsx?$' },
-      to: { path: '^src/shared/testing' },
+        'testing/ directories hold fakes and fixtures. Production code importing them means a ' +
+        'fake could ship — and that a real implementation is missing.',
+      from: { pathNot: TEST_CODE },
+      to: { path: ['^src/shared/testing', '^src/modules/[^/]+/testing'] },
     },
 
     {
@@ -150,7 +158,7 @@ module.exports = {
           '(^|/)tsconfig\\.json$',
           '\\.(test|spec)\\.tsx?$',
           '^src/app/',
-          '^src/shared/testing/',
+          '/testing/',
         ],
       },
       to: {},

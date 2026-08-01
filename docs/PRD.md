@@ -116,24 +116,33 @@ Stated up front so it can be recognized honestly:
 
 No institutional cooperation is available, so verification must be entirely self-serve.
 
-### 5.1 Two-factor campus identity
+### 5.1 College email is the account
 
-**Primary: GitHub OAuth.** Chosen because it does three jobs at once — it authenticates, it demonstrates the user is a developer, and it yields the public repository graph that _is_ Module A. No separate password system exists.
+See [ADR 0003](adr/0003-email-first-identity.md) for why this replaced the original GitHub-first design.
 
-**Secondary: campus email verification.** A one-time code sent to an address on an allowlisted institutional domain (`*.ac.in`, `*.edu.in`, `*.edu`, or the specific domains this campus uses). This establishes campus membership.
+**Sign-up and sign-in: a six-digit code sent to an institutional address** on an allowlisted domain (`*.ac.in`, `*.edu.in`, `*.edu`, or the specific domains this campus uses). The credential that establishes campus membership is the same one that authenticates — there is no second step to abandon.
 
-**Fallback: manual approval.** A queue for students whose institution issues no usable email address. Reviewed by the maintainer.
+Codes rather than magic links, because students routinely open mail on a phone while signed up on a laptop, and because institutional link scanners frequently pre-fetch URLs and consume a single-use link before the student ever clicks it.
+
+**GitHub: linked separately, and optional.** Most students' GitHub accounts are tied to a personal address, so GitHub proves someone is a developer — never that they are on this campus. It is connected after sign-in, can be disconnected and reconnected freely, and **is never a sign-in path in any phase.**
+
+**Fallback: manual approval.** A queue for students whose institution issues no usable email address, or whose domain is not yet on the allowlist. Reviewed by the maintainer.
 
 ### 5.2 Requirements
 
-- **ID-1** — Sign-in is GitHub OAuth only. No email/password, no password storage.
-- **ID-2** — An account is `unverified` until campus email is confirmed or manual approval is granted.
-- **ID-3** — `unverified` accounts have read-only access. They may not create projects, post to any board, or contact other users.
-- **ID-4** — The institutional domain allowlist is configuration, editable without a deploy.
+- **ID-1** — Sign-in is a one-time code to a campus email address. No passwords, ever, anywhere.
+- **ID-2** — An address on an allowlisted domain becomes `active` on first successful code entry. An address outside it may request manual approval and is `pending_approval` until granted.
+- **ID-3** — `pending_approval` accounts have read-only access. They may not create projects, post to any board, or contact other users.
+- **ID-4** — The institutional domain allowlist is configuration, editable without a deploy. It supports exact domains and suffix wildcards.
 - **ID-5** — Users declare an expected graduation year at signup.
 - **ID-6** — Accounts transition automatically to `alumni` after their declared graduation year passes. Alumni keep full read access, keep their profile, and may contribute to the Knowledge Hub and Archive, but may not post to the gig or tool boards.
-- **ID-7** — Verification emails are rate-limited to 5 per address per 24h and 20 per IP per 24h.
-- **ID-8** — GitHub OAuth tokens are encrypted at rest and are never exposed to the client.
+- **ID-7** — Codes are rate-limited to 5 per address per 24h and 20 per IP per 24h, expire after 10 minutes, and are invalidated after 5 failed attempts.
+- **ID-8** — Codes are stored hashed, never in plaintext, and compared in constant time.
+- **ID-9** — Requesting a code returns the same response whether or not an account exists, so the endpoint cannot be used to enumerate campus members.
+- **ID-10** — A GitHub account may be linked to at most one Uni-verse account, keyed on GitHub's stable numeric ID rather than the renameable login.
+- **ID-11** — A user may use the product fully without linking GitHub. Linking unlocks project import and the builder profile; nothing else depends on it.
+- **ID-12** — GitHub OAuth tokens are encrypted at rest, never exposed to the client, and used solely for the linking user's own sync.
+- **ID-13** — Unlinking GitHub deletes the stored token immediately and never affects the user's ability to sign in.
 
 ### 5.3 GitHub App vs OAuth App
 

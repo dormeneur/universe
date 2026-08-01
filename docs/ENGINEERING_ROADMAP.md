@@ -72,45 +72,47 @@ Do not build "just a small user table" here. Phase 0 ends with zero business log
 
 First vertical slice. Small domain, real complexity in the adapters — a good shape for proving the layering works.
 
-### Deliverables
+Built as two slices rather than one, because email sign-in is independently useful and GitHub linking is independently riskier. See [ADR 0003](adr/0003-email-first-identity.md) and [ADR 0004](adr/0004-first-party-sessions.md).
+
+### Slice 1 — Email code sign-in (week 3)
 
 **domain/**
 
-- `User`, `UserId`, `VerificationStatus`, `Role`, `GradYear`
-- Verification state machine: `unverified → pending_email → verified`, plus `→ pending_manual → verified`
-- `canPost(user)` policy — verified students only (PRD ID-3)
-- Graduation policy: `isAlumni(user, now)` derived from `gradYear`, using injected `Clock`
+- `CampusEmail` value object: normalization, shape validation, domain extraction
+- Allowlist policy: exact domains plus suffix wildcards → `allowed | needs_review`
+- `User`, `UserId`, `UserStatus` (`pending_approval | active | suspended`), `Role` (`student | alumni | admin`)
+- Verification code policy: expiry, attempt limits, consumption — pure, hashing is a port
+- Session policy: absolute and idle expiry
+- `canPost`, `canLinkGitHub`, `deriveRole(gradYear, now)` using the injected `Clock`
 
 **application/**
 
-- `startEmailVerification`, `confirmEmailCode`, `requestManualApproval`, `approveUser`, `promoteGraduatedUsers`
-- Ports: `UserRepository`, `VerificationCodeStore`, `Mailer`, `DomainAllowlist`
+- `requestSignInCode`, `confirmSignInCode`, `signOut`, `requestManualApproval`, `approveUser`, `promoteGraduatedUsers`
+- Ports: `UserReader`/`UserWriter`, `VerificationCodeStore`, `SessionStore`, `Mailer`, `Hasher`, `RateLimiter`, `DomainAllowlist`
 
-**infrastructure/**
+**infrastructure/** — `identity` Drizzle schema, repositories, SHA-256 hasher, Resend mailer (console mailer in dev)
 
-- Drizzle `identity` schema + repository
-- Auth.js GitHub provider; OAuth token encrypted at rest (PRD ID-8)
-- Resend mailer
-- Allowlist from config, editable without deploy (PRD ID-4)
+**presentation/** — sign-in, code entry, pending-approval screens; admin approval queue; middleware gating `pending_approval` to read-only
 
-**presentation/**
+### Slice 2 — GitHub linking (week 4)
 
-- Sign-in, verification, pending-approval screens
-- Admin approval queue
-- Middleware gating unverified users to read-only
+- Authorization-code flow with PKCE and signed `state`, link-only — never creates a session
+- Token encrypted at rest, never sent to the client (PRD ID-12)
+- Uniqueness on GitHub's numeric ID, not the renameable login (PRD ID-10)
+- Link, unlink, relink; unlinking never affects sign-in (PRD ID-13)
 
-**Cross-cutting**
+### Cross-cutting
 
 - Rate limiting: 5 codes/address/24h, 20/IP/24h (PRD ID-7)
 - Daily job: graduation transitions
 
 ### Definition of done
 
-A real GitHub account signs in, verifies a campus email, and reaches a verified state. Contract tests pass against both the Drizzle repository and the in-memory fake. The verification state machine has full unit coverage with zero I/O.
+A campus email receives a code, enters it, and lands signed in — with no GitHub account involved. That user can then link GitHub, unlink it, and still sign in. Contract tests pass against both the Drizzle repositories and the in-memory fakes. Code expiry, attempt limits, and graduation transitions are unit-tested at exact boundaries with zero I/O.
 
 ### Risk
 
-GitHub App registration (PRD §5.3) has fiddly callback configuration. Do it in week 3, not week 8 — a blocked afternoon here is much cheaper than a blocked week later.
+Email deliverability is now a hard dependency: a code that lands in spam is indistinguishable from a broken product. Send to a real institutional address early in week 3 rather than trusting a local console mailer, and keep the manual approval path working as the escape hatch.
 
 ---
 

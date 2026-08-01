@@ -1,0 +1,168 @@
+import type { CampusEmail } from '../domain/campus-email';
+import type { Session } from '../domain/session';
+import type { User, UserId } from '../domain/user';
+import type { VerificationCode } from '../domain/verification-code';
+import type { Hasher, SecretGenerator } from '../application/ports/crypto';
+import type { Mailer, SignInCodeMessage } from '../application/ports/mailer';
+import type { RateLimiter, RateLimitVerdict } from '../application/ports/rate-limiter';
+import type { SessionStore } from '../application/ports/session-store';
+import type { UserRepository } from '../application/ports/user-repository';
+import type { VerificationCodeStore } from '../application/ports/verification-code-store';
+
+export class InMemoryUserRepository implements UserRepository {
+  private readonly byIdIndex = new Map<string, User>();
+
+  constructor(seed: readonly User[] = []) {
+    for (const user of seed) this.byIdIndex.set(user.id, user);
+  }
+
+  byId(id: UserId): Promise<User | null> {
+    return Promise.resolve(this.byIdIndex.get(id) ?? null);
+  }
+
+  byEmail(email: CampusEmail): Promise<User | null> {
+    for (const user of this.byIdIndex.values()) {
+      if (user.email === email) return Promise.resolve(user);
+    }
+    return Promise.resolve(null);
+  }
+
+  save(user: User): Promise<void> {
+    this.byIdIndex.set(user.id, user);
+    return Promise.resolve();
+  }
+
+  listPendingApproval(): Promise<readonly User[]> {
+    const pending = [...this.byIdIndex.values()]
+      .filter((u) => u.status === 'pending_approval')
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    return Promise.resolve(pending);
+  }
+}
+
+export class InMemoryVerificationCodeStore implements VerificationCodeStore {
+  private readonly codes = new Map<string, VerificationCode>();
+
+  byEmail(email: CampusEmail): Promise<VerificationCode | null> {
+    return Promise.resolve(this.codes.get(email) ?? null);
+  }
+
+  save(code: VerificationCode): Promise<void> {
+    this.codes.set(code.email, code);
+    return Promise.resolve();
+  }
+
+  delete(email: CampusEmail): Promise<void> {
+    this.codes.delete(email);
+    return Promise.resolve();
+  }
+}
+
+export class InMemorySessionStore implements SessionStore {
+  private readonly sessions = new Map<string, Session>();
+
+  byTokenHash(tokenHash: string): Promise<Session | null> {
+    for (const session of this.sessions.values()) {
+      if (session.tokenHash === tokenHash) return Promise.resolve(session);
+    }
+    return Promise.resolve(null);
+  }
+
+  save(session: Session): Promise<void> {
+    this.sessions.set(session.id, session);
+    return Promise.resolve();
+  }
+
+  revokeAllForUser(userId: UserId, at: Date): Promise<void> {
+    for (const [id, session] of this.sessions) {
+      if (session.userId === userId && session.revokedAt === null) {
+        this.sessions.set(id, { ...session, revokedAt: at });
+      }
+    }
+    return Promise.resolve();
+  }
+
+  deleteExpired(before: Date): Promise<number> {
+    let removed = 0;
+    for (const [id, session] of this.sessions) {
+      if (session.expiresAt.getTime() < before.getTime()) {
+        this.sessions.delete(id);
+        removed++;
+      }
+    }
+    return Promise.resolve(removed);
+  }
+}
+
+export class RecordingMailer implements Mailer {
+  readonly sent: SignInCodeMessage[] = [];
+
+  sendSignInCode(message: SignInCodeMessage): Promise<void> {
+    this.sent.push(message);
+    return Promise.resolve();
+  }
+
+  get lastCode(): string | undefined {
+    return this.sent.at(-1)?.code;
+  }
+}
+
+/**
+ * A reversible stand-in for a real digest, so a test can see what was hashed.
+ * The real implementation is verified separately against the same port
+ * contract — this exists to make assertions readable, not to model SHA-256.
+ */
+export class FakeHasher implements Hasher {
+  hash(value: string): string {
+    return `hashed(${value})`;
+  }
+
+  equals(a: string, b: string): boolean {
+    return a === b;
+  }
+}
+
+export class FakeSecretGenerator implements SecretGenerator {
+  private codeIndex = 0;
+  private tokenIndex = 0;
+
+  constructor(
+    private readonly codes: readonly string[] = ['123456'],
+    private readonly tokens: readonly string[] = ['session-token-1'],
+  ) {}
+
+  numericCode(length: number): string {
+    const next = this.codes[this.codeIndex % this.codes.length] ?? '0'.repeat(length);
+    this.codeIndex++;
+    return next;
+  }
+
+  sessionToken(): string {
+    const next = this.tokens[this.tokenIndex % this.tokens.length] ?? 'fallback-token';
+    this.tokenIndex++;
+    return next;
+  }
+}
+
+/** Counts against real limits, so rate-limit behaviour can be tested. */
+export class CountingRateLimiter implements RateLimiter {
+  private readonly counts = new Map<string, number>();
+
+  consume(key: string, limit: number, windowMs: number): Promise<RateLimitVerdict> {
+    const used = (this.counts.get(key) ?? 0) + 1;
+    this.counts.set(key, used);
+
+    return Promise.resolve(
+      used > limit
+        ? { allowed: false, retryAfterMs: windowMs }
+        : { allowed: true, remaining: limit - used },
+    );
+  }
+}
+
+/** For tests where rate limiting is not the subject. */
+export class PermissiveRateLimiter implements RateLimiter {
+  consume(_key: string, limit: number): Promise<RateLimitVerdict> {
+    return Promise.resolve({ allowed: true, remaining: limit });
+  }
+}
