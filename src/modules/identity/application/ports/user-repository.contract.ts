@@ -58,17 +58,19 @@ export function userRepositoryContract(name: string, make: () => Promise<UserRep
 
     it('preserves a linked GitHub account through a round trip', async () => {
       const repo = await make();
-      const user = makeUser({
-        id: 'u-github' as UserId,
-        github: {
-          githubUserId: 4242,
-          login: 'octocat',
-          avatarUrl: 'https://example.test/a.png',
-          linkedAt: new Date('2026-03-01T00:00:00.000Z'),
-        },
-      });
+      const user = makeUser({ id: 'u-github' as UserId, github: null });
+      const link = {
+        githubUserId: 4242,
+        login: 'octocat',
+        avatarUrl: 'https://example.test/a.png',
+        linkedAt: new Date('2026-03-01T00:00:00.000Z'),
+      };
+
       await repo.save(user);
-      expect((await repo.byId(user.id))?.github).toEqual(user.github);
+      // Established through the linking port, not `save` — see below.
+      await repo.linkGitHub(user.id, link, 'encrypted-token');
+
+      expect((await repo.byId(user.id))?.github).toEqual(link);
     });
 
     it('lists only users awaiting approval', async () => {
@@ -90,6 +92,95 @@ export function userRepositoryContract(name: string, make: () => Promise<UserRep
 
       const pending = await repo.listPendingApproval();
       expect(pending.map((u) => u.id)).toEqual(['u-pending']);
+    });
+
+    it('returns null when no account holds that GitHub id', async () => {
+      const repo = await make();
+      expect(await repo.byGitHubUserId(999_999)).toBeNull();
+    });
+
+    it('finds an account by the GitHub id it is linked to', async () => {
+      const repo = await make();
+      const user = makeUser({ id: 'u-gh' as UserId });
+      await repo.save(user);
+      await repo.linkGitHub(
+        user.id,
+        {
+          githubUserId: 777,
+          login: 'octocat',
+          avatarUrl: null,
+          linkedAt: new Date('2026-08-01T00:00:00.000Z'),
+        },
+        'encrypted-token',
+      );
+
+      expect((await repo.byGitHubUserId(777))?.id).toBe('u-gh');
+    });
+
+    it('clears the link on unlink, and the account survives', async () => {
+      const repo = await make();
+      const user = makeUser({ id: 'u-unlink' as UserId });
+      await repo.save(user);
+      await repo.linkGitHub(
+        user.id,
+        {
+          githubUserId: 888,
+          login: 'octocat',
+          avatarUrl: null,
+          linkedAt: new Date('2026-08-01T00:00:00.000Z'),
+        },
+        'encrypted-token',
+      );
+
+      await repo.unlinkGitHub(user.id);
+
+      expect((await repo.byId(user.id))?.github).toBeNull();
+      expect(await repo.byGitHubUserId(888)).toBeNull();
+      // Unlinking must never remove the account itself (PRD ID-13).
+      expect(await repo.byId(user.id)).not.toBeNull();
+    });
+
+    it('allows relinking after an unlink', async () => {
+      const repo = await make();
+      const user = makeUser({ id: 'u-relink' as UserId });
+      const link = {
+        githubUserId: 555,
+        login: 'octocat',
+        avatarUrl: null,
+        linkedAt: new Date('2026-08-01T00:00:00.000Z'),
+      };
+      await repo.save(user);
+      await repo.linkGitHub(user.id, link, 'token-1');
+      await repo.unlinkGitHub(user.id);
+      await repo.linkGitHub(user.id, link, 'token-2');
+
+      expect((await repo.byId(user.id))?.github?.githubUserId).toBe(555);
+    });
+
+    it('does not clear an existing link when a stale profile is saved', async () => {
+      // `save` owns profile fields only. Without this, any code path holding a
+      // User loaded before linking — an onboarding edit, say — would write
+      // github: null straight over a live link and silently drop the token.
+      const repo = await make();
+      const user = makeUser({ id: 'u-keep' as UserId, github: null });
+      await repo.save(user);
+      await repo.linkGitHub(
+        user.id,
+        {
+          githubUserId: 666,
+          login: 'octocat',
+          avatarUrl: null,
+          linkedAt: new Date('2026-08-01T00:00:00.000Z'),
+        },
+        'encrypted-token',
+      );
+
+      // Deliberately the pre-link snapshot, with github still null.
+      await repo.save({ ...user, displayName: 'Renamed' });
+
+      const after = await repo.byId(user.id);
+      expect(after?.displayName).toBe('Renamed');
+      expect(after?.github?.githubUserId).toBe(666);
     });
 
     it('lists those awaiting approval oldest first, so nobody is left behind', async () => {

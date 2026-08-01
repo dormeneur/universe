@@ -8,6 +8,13 @@
       "when": 1785557727653,
       "tag": "0000_spotty_human_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785560461405,
+      "tag": "0001_happy_synch",
+      "breakpoints": true
     }
   ]
 }

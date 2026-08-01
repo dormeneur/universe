@@ -92,3 +92,23 @@ export const rateLimitBuckets = identitySchema.table('rate_limit_buckets', {
   count: integer('count').notNull().default(0),
   windowStartedAt: timestamp('window_started_at', { withTimezone: true }).notNull(),
 });
+
+/**
+ * The pending half of a GitHub link, held between sending a student to GitHub
+ * and their return. Single-use and short-lived — see domain/github-link.ts.
+ */
+export const oauthStates = identitySchema.table(
+  'oauth_states',
+  {
+    state: text('state').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeVerifier: text('code_verifier').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+  },
+  // For the sweep that clears abandoned flows.
+  (table) => [index('oauth_states_expires_at_idx').on(table.expiresAt)],
+);

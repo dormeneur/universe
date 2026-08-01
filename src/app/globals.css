@@ -193,3 +193,35 @@ main.page {
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+
+.subtle {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.card {
+  margin-top: 2rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  letter-spacing: -0.005em;
+}
+
+.card p {
+  margin: 0 0 1rem;
+  font-size: 0.925rem;
+}
+
+/* Buttons default to full width for the auth forms; inline ones sit in prose. */
+button.inline {
+  width: auto;
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+}

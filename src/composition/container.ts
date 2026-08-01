@@ -34,6 +34,17 @@ export function createContainer() {
     // explicitly — an end-to-end run against a production build, for instance.
     allowConsoleMail: config.NODE_ENV !== 'production' || config.ALLOW_CONSOLE_MAIL,
     devMailSink: config.DEV_MAIL_SINK,
+    // All three together or not at all — a half-configured OAuth app would
+    // fail at the callback, which is the worst place to discover it.
+    github:
+      config.GITHUB_CLIENT_ID && config.GITHUB_CLIENT_SECRET && config.GITHUB_TOKEN_ENCRYPTION_KEY
+        ? {
+            clientId: config.GITHUB_CLIENT_ID,
+            clientSecret: config.GITHUB_CLIENT_SECRET,
+            redirectUri: new URL('/api/github/callback', config.APP_URL).toString(),
+            tokenEncryptionKey: config.GITHUB_TOKEN_ENCRYPTION_KEY,
+          }
+        : null,
   });
 
   return {

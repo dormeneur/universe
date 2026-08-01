@@ -11,14 +11,26 @@ import {
   makeListPendingApproval,
   makeSuspendUser,
 } from './application/moderate-user';
+import {
+  makeCompleteGitHubLink,
+  makeStartGitHubLink,
+  makeUnlinkGitHub,
+} from './application/link-github';
 import { makeRequestSignInCode } from './application/request-sign-in-code';
 import { makeSignOut, makeSignOutEverywhere } from './application/sign-out';
+import { GitHubOAuthHttpClient } from './infrastructure/github-oauth-client';
+import { DrizzleOAuthStateStore } from './infrastructure/drizzle-oauth-state-store';
 import { DrizzleRateLimiter } from './infrastructure/drizzle-rate-limiter';
 import { DrizzleSessionStore } from './infrastructure/drizzle-session-store';
 import { DrizzleUserRepository } from './infrastructure/drizzle-user-repository';
 import { DrizzleVerificationCodeStore } from './infrastructure/drizzle-verification-code-store';
 import { ConsoleMailer, ResendMailer } from './infrastructure/mailer';
-import { NodeHasher, NodeSecretGenerator } from './infrastructure/node-crypto';
+import {
+  AesGcmTokenCipher,
+  NodeHasher,
+  NodePkceGenerator,
+  NodeSecretGenerator,
+} from './infrastructure/node-crypto';
 import type { Mailer } from './application/ports/mailer';
 
 export type IdentityModuleConfig = {
@@ -33,6 +45,16 @@ export type IdentityModuleConfig = {
   readonly allowConsoleMail: boolean;
   /** Development-only sink for sign-in codes; see ConsoleMailer. */
   readonly devMailSink?: string | undefined;
+  /**
+   * Null when GitHub OAuth is not configured. Linking is then unavailable and
+   * everything else works unchanged, rather than the app failing to start.
+   */
+  readonly github: {
+    readonly clientId: string;
+    readonly clientSecret: string;
+    readonly redirectUri: string;
+    readonly tokenEncryptionKey: string;
+  } | null;
 };
 
 /**
@@ -54,7 +76,39 @@ export function createIdentityModule(config: IdentityModuleConfig) {
     ? new ResendMailer(config.resend, config.logger)
     : new ConsoleMailer(config.logger, config.allowConsoleMail, config.devMailSink);
 
+  // Present only when GitHub is configured. Callers check `githubLinking` for
+  // null rather than the module throwing, so an unconfigured deployment is a
+  // missing feature and not a broken app.
+  const githubLinking = config.github
+    ? (() => {
+        const oauth = new GitHubOAuthHttpClient(
+          {
+            clientId: config.github.clientId,
+            clientSecret: config.github.clientSecret,
+            redirectUri: config.github.redirectUri,
+          },
+          config.logger,
+        );
+        const states = new DrizzleOAuthStateStore(config.db);
+        const cipher = new AesGcmTokenCipher(config.github.tokenEncryptionKey);
+
+        return {
+          start: makeStartGitHubLink({
+            users,
+            states,
+            oauth,
+            pkce: new NodePkceGenerator(),
+            ids: config.ids,
+            clock: config.clock,
+          }),
+          complete: makeCompleteGitHubLink({ users, states, oauth, cipher, clock: config.clock }),
+          unlink: makeUnlinkGitHub({ users }),
+        };
+      })()
+    : null;
+
   return {
+    githubLinking,
     requestSignInCode: makeRequestSignInCode({
       codes,
       mailer,

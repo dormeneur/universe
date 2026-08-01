@@ -55,6 +55,25 @@ const ConfigSchema = z.object({
    * running Mailpit.
    */
   DEV_MAIL_SINK: z.string().optional(),
+
+  /** Public origin, used to build the GitHub OAuth callback URL. */
+  APP_URL: z.string().default('http://localhost:3000'),
+
+  /**
+   * GitHub OAuth app credentials. All three are optional together: without
+   * them, linking is simply unavailable and the rest of the product works
+   * unchanged — a student can sign in, browse, and use the boards with no
+   * GitHub account at all (PRD ID-11).
+   */
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+
+  /**
+   * 32 bytes, base64, for encrypting stored GitHub access tokens at rest.
+   * Generate with:
+   *   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+   */
+  GITHUB_TOKEN_ENCRYPTION_KEY: z.string().optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

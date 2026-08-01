@@ -67,7 +67,31 @@ test('a student signs up with a college email and no GitHub account', async ({ p
   await page.getByRole('button', { name: 'Finish' }).click();
 
   await expect(page.getByRole('heading', { name: 'Hi, E2E Student' })).toBeVisible();
-  await expect(page.getByText(/GitHub isn.t linked yet/)).toBeVisible();
+});
+
+test('a student can use the product with GitHub unconfigured', async ({ page }) => {
+  // PRD ID-11: linking is optional, and a deployment without GitHub
+  // credentials must degrade to a missing feature rather than a broken page.
+  const email = uniqueEmail();
+
+  await page.goto('/sign-in');
+  await page.getByLabel('College email').fill(email);
+  await page.getByRole('button', { name: 'Send me a code' }).click();
+  await page.getByLabel('Six-digit code').fill(await latestCodeFor(email));
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Your name').fill('Unlinked Student');
+  await page.getByLabel('Expected graduation year').fill('2029');
+  await page.getByRole('button', { name: 'Finish' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Hi, Unlinked Student' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'GitHub', exact: true })).toBeVisible();
+  await expect(page.getByText(/Not connected/)).toBeVisible();
+  await expect(page.getByText(/aren.t configured on this deployment/)).toBeVisible();
+});
+
+test('the GitHub callback refuses an unauthenticated visitor', async ({ page }) => {
+  await page.goto('/api/github/callback?code=abc&state=xyz');
+  await expect(page.getByRole('heading', { name: 'Sign in to Uni-verse' })).toBeVisible();
 });
 
 /**

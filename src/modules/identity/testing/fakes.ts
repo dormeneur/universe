@@ -1,16 +1,29 @@
 import type { CampusEmail } from '../domain/campus-email';
+import type { GitHubLinkState } from '../domain/github-link';
 import type { Session } from '../domain/session';
-import type { User, UserId } from '../domain/user';
+import type { GitHubLink, User, UserId } from '../domain/user';
 import type { VerificationCode } from '../domain/verification-code';
+import { ok, type Result } from '@/shared/result';
 import type { Hasher, SecretGenerator } from '../application/ports/crypto';
+import type {
+  GitHubIdentity,
+  GitHubOAuthClient,
+  OAuthExchangeFailure,
+  PkceGenerator,
+  PkcePair,
+} from '../application/ports/github-oauth';
 import type { Mailer, SignInCodeMessage } from '../application/ports/mailer';
+import type { OAuthStateStore } from '../application/ports/oauth-state-store';
 import type { RateLimiter, RateLimitVerdict } from '../application/ports/rate-limiter';
 import type { SessionStore } from '../application/ports/session-store';
+import type { TokenCipher } from '../application/ports/token-cipher';
 import type { UserRepository } from '../application/ports/user-repository';
 import type { VerificationCodeStore } from '../application/ports/verification-code-store';
 
 export class InMemoryUserRepository implements UserRepository {
   private readonly byIdIndex = new Map<string, User>();
+  /** Mirrors the column the domain model deliberately does not carry. */
+  private readonly tokens = new Map<string, string>();
 
   constructor(seed: readonly User[] = []) {
     for (const user of seed) this.byIdIndex.set(user.id, user);
@@ -27,9 +40,40 @@ export class InMemoryUserRepository implements UserRepository {
     return Promise.resolve(null);
   }
 
+  byGitHubUserId(githubUserId: number): Promise<User | null> {
+    for (const user of this.byIdIndex.values()) {
+      if (user.github?.githubUserId === githubUserId) return Promise.resolve(user);
+    }
+    return Promise.resolve(null);
+  }
+
   save(user: User): Promise<void> {
-    this.byIdIndex.set(user.id, user);
+    // Profile fields only. The link and token belong to linkGitHub/unlinkGitHub,
+    // so a caller holding a pre-link snapshot cannot wipe them by saving it.
+    const existing = this.byIdIndex.get(user.id);
+    this.byIdIndex.set(user.id, { ...user, github: existing ? existing.github : user.github });
     return Promise.resolve();
+  }
+
+  linkGitHub(userId: UserId, link: GitHubLink, encryptedToken: string): Promise<void> {
+    const user = this.byIdIndex.get(userId);
+    if (!user) return Promise.resolve();
+    this.byIdIndex.set(userId, { ...user, github: link });
+    this.tokens.set(userId, encryptedToken);
+    return Promise.resolve();
+  }
+
+  unlinkGitHub(userId: UserId): Promise<void> {
+    const user = this.byIdIndex.get(userId);
+    if (!user) return Promise.resolve();
+    this.byIdIndex.set(userId, { ...user, github: null });
+    this.tokens.delete(userId);
+    return Promise.resolve();
+  }
+
+  /** Test-only window onto the token, which no port exposes. */
+  storedToken(userId: UserId): string | undefined {
+    return this.tokens.get(userId);
   }
 
   listPendingApproval(): Promise<readonly User[]> {
@@ -164,5 +208,80 @@ export class CountingRateLimiter implements RateLimiter {
 export class PermissiveRateLimiter implements RateLimiter {
   consume(_key: string, limit: number): Promise<RateLimitVerdict> {
     return Promise.resolve({ allowed: true, remaining: limit });
+  }
+}
+
+export class InMemoryOAuthStateStore implements OAuthStateStore {
+  private readonly states = new Map<string, GitHubLinkState>();
+
+  byState(state: string): Promise<GitHubLinkState | null> {
+    return Promise.resolve(this.states.get(state) ?? null);
+  }
+
+  save(state: GitHubLinkState): Promise<void> {
+    this.states.set(state.state, state);
+    return Promise.resolve();
+  }
+
+  deleteExpired(before: Date): Promise<number> {
+    let removed = 0;
+    for (const [key, value] of this.states) {
+      if (value.expiresAt.getTime() < before.getTime()) {
+        this.states.delete(key);
+        removed++;
+      }
+    }
+    return Promise.resolve(removed);
+  }
+}
+
+/** Reversible stand-in, so tests can see what was encrypted. */
+export class FakeTokenCipher implements TokenCipher {
+  encrypt(plaintext: string): string {
+    return `enc(${plaintext})`;
+  }
+
+  decrypt(payload: string): string {
+    return payload.replace(/^enc\(/, '').replace(/\)$/, '');
+  }
+}
+
+export class FakePkceGenerator implements PkceGenerator {
+  constructor(private readonly pair: PkcePair = { verifier: 'v-1', challenge: 'c-1' }) {}
+
+  generate(): PkcePair {
+    return this.pair;
+  }
+}
+
+/**
+ * A scriptable GitHub. Records what it was asked so a test can assert the
+ * verifier travelled with the exchange — without that, PKCE would be
+ * decorative.
+ */
+export class FakeGitHubOAuthClient implements GitHubOAuthClient {
+  readonly authorizeCalls: { state: string; codeChallenge: string }[] = [];
+  readonly exchangeCalls: { code: string; codeVerifier: string }[] = [];
+
+  constructor(
+    private readonly outcome: Result<GitHubIdentity, OAuthExchangeFailure> = ok({
+      githubUserId: 4242,
+      login: 'octocat',
+      avatarUrl: 'https://example.test/octocat.png',
+      accessToken: 'gho_secret',
+    }),
+  ) {}
+
+  authorizeUrl(params: { state: string; codeChallenge: string }): string {
+    this.authorizeCalls.push(params);
+    return `https://github.test/login/oauth/authorize?state=${params.state}&code_challenge=${params.codeChallenge}`;
+  }
+
+  exchangeCode(params: {
+    code: string;
+    codeVerifier: string;
+  }): Promise<Result<GitHubIdentity, OAuthExchangeFailure>> {
+    this.exchangeCalls.push(params);
+    return Promise.resolve(this.outcome);
   }
 }

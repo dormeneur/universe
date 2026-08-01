@@ -112,3 +112,37 @@ export async function signOutAction(): Promise<void> {
   await clearSessionCookie();
   redirect('/sign-in');
 }
+
+/** Resolves the signed-in user, or redirects. Used by the linking actions. */
+async function requireUser() {
+  const container = getContainer();
+  const token = await readSessionCookie();
+  if (!token) redirect('/sign-in');
+
+  const authenticated = await container.identity.authenticate(token);
+  if (!authenticated.ok) redirect('/sign-in');
+
+  return { container, user: authenticated.value };
+}
+
+export async function startGitHubLinkAction(): Promise<void> {
+  const { container, user } = await requireUser();
+
+  const linking = container.identity.githubLinking;
+  if (!linking) redirect('/?github=unavailable');
+
+  const result = await linking.start({ userId: user.id });
+  if (!result.ok) redirect('/?github=error');
+
+  redirect(result.value.authorizeUrl);
+}
+
+export async function unlinkGitHubAction(): Promise<void> {
+  const { container, user } = await requireUser();
+
+  const linking = container.identity.githubLinking;
+  if (!linking) redirect('/?github=unavailable');
+
+  await linking.unlink({ userId: user.id });
+  redirect('/?github=unlinked');
+}

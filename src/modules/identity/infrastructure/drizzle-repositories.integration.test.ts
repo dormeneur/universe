@@ -73,6 +73,8 @@ describe('DrizzleUserRepository — persistence specifics', () => {
   });
 
   it('refuses two accounts linked to the same GitHub account', async () => {
+    // The unique index is the real guarantee behind PRD ID-10. The use case
+    // checks first for a friendly message, but this is what settles a race.
     const repo = new DrizzleUserRepository(testDatabase());
     const link = {
       githubUserId: 999,
@@ -81,16 +83,11 @@ describe('DrizzleUserRepository — persistence specifics', () => {
       linkedAt: new Date('2026-03-01T00:00:00.000Z'),
     };
 
-    await repo.save(
-      makeUser({ id: 'u1' as UserId, email: 'a@college.ac.in' as CampusEmail, github: link }),
-    );
+    await repo.save(makeUser({ id: 'u1' as UserId, email: 'a@college.ac.in' as CampusEmail }));
+    await repo.save(makeUser({ id: 'u2' as UserId, email: 'b@college.ac.in' as CampusEmail }));
+    await repo.linkGitHub('u1' as UserId, link, 'token-1');
 
-    await expectPostgresError(
-      repo.save(
-        makeUser({ id: 'u2' as UserId, email: 'b@college.ac.in' as CampusEmail, github: link }),
-      ),
-      UNIQUE_VIOLATION,
-    );
+    await expectPostgresError(repo.linkGitHub('u2' as UserId, link, 'token-2'), UNIQUE_VIOLATION);
   });
 
   it('allows many unlinked accounts, since nulls do not collide', async () => {

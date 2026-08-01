@@ -50,6 +50,17 @@ export class DrizzleUserRepository implements UserRepository {
     return row ? toDomain(row) : null;
   }
 
+  /**
+   * Writes profile fields only.
+   *
+   * The GitHub columns are deliberately absent from the update set: they are
+   * owned by linkGitHub/unlinkGitHub. Otherwise any caller holding a User
+   * loaded before linking — an onboarding edit, say — would write null over a
+   * live link and drop the access token with it.
+   *
+   * Upsert rather than insert-or-update, so callers need not know whether the
+   * row already exists. On insert the GitHub columns are null anyway.
+   */
   async save(user: User): Promise<void> {
     const values = {
       id: user.id,
@@ -58,19 +69,9 @@ export class DrizzleUserRepository implements UserRepository {
       status: user.status,
       role: user.role,
       gradYear: user.gradYear,
-      githubUserId: user.github?.githubUserId ?? null,
-      githubLogin: user.github?.login ?? null,
-      githubAvatarUrl: user.github?.avatarUrl ?? null,
-      githubLinkedAt: user.github?.linkedAt ?? null,
       createdAt: user.createdAt,
     };
 
-    // Upsert rather than insert-or-update: `save` is the port's only write, so
-    // callers do not have to know whether the row already exists.
-    //
-    // githubAccessToken is deliberately absent from the update set — it is
-    // written only by the linking flow, so an ordinary profile save cannot
-    // clobber it with a null.
     await this.db
       .insert(users)
       .values(values)
@@ -82,12 +83,45 @@ export class DrizzleUserRepository implements UserRepository {
           status: values.status,
           role: values.role,
           gradYear: values.gradYear,
-          githubUserId: values.githubUserId,
-          githubLogin: values.githubLogin,
-          githubAvatarUrl: values.githubAvatarUrl,
-          githubLinkedAt: values.githubLinkedAt,
         },
       });
+  }
+
+  async byGitHubUserId(githubUserId: number): Promise<User | null> {
+    const [row] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.githubUserId, githubUserId))
+      .limit(1);
+    return row ? toDomain(row) : null;
+  }
+
+  async linkGitHub(userId: UserId, link: GitHubLink, encryptedToken: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        githubUserId: link.githubUserId,
+        githubLogin: link.login,
+        githubAvatarUrl: link.avatarUrl,
+        githubLinkedAt: link.linkedAt,
+        githubAccessToken: encryptedToken,
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async unlinkGitHub(userId: UserId): Promise<void> {
+    // The token is cleared in the same statement as the link — leaving it
+    // behind would mean an "unlinked" account still holds a live credential.
+    await this.db
+      .update(users)
+      .set({
+        githubUserId: null,
+        githubLogin: null,
+        githubAvatarUrl: null,
+        githubLinkedAt: null,
+        githubAccessToken: null,
+      })
+      .where(eq(users.id, userId));
   }
 
   async listPendingApproval(): Promise<readonly User[]> {
