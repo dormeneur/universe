@@ -20,12 +20,12 @@ A campus-only git host would be a worse GitHub with fewer eyeballs. The problem 
 
 ## What it is, and isn't
 
-| Is | Isn't |
-|---|---|
-| A search engine for campus projects | A git host |
-| A portfolio that's useful before anyone else joins | A social network |
-| A bulletin board that introduces people | A marketplace — no fees, no escrow, no custody |
-| Free, forever, for one campus | A startup |
+| Is                                                 | Isn't                                          |
+| -------------------------------------------------- | ---------------------------------------------- |
+| A search engine for campus projects                | A git host                                     |
+| A portfolio that's useful before anyone else joins | A social network                               |
+| A bulletin board that introduces people            | A marketplace — no fees, no escrow, no custody |
+| Free, forever, for one campus                      | A startup                                      |
 
 No commission, no wallet, no payment handling anywhere in the system. Money between students moves directly between students. That's a design decision with teeth: it removes escrow, payment-aggregator licensing, GST, and TDS from the build in one stroke.
 
@@ -33,32 +33,36 @@ No commission, no wallet, no payment handling anywhere in the system. Money betw
 
 ## Status
 
-**No code yet. That's on purpose.**
+**Phase 0 complete — foundation only, zero business logic.**
 
-The plan is done — scope, architecture, module boundaries, and a phased build order with hard gates. It exists because the original pitch was four simultaneous marketplaces on one campus, which is the most reliable way to build nothing at all.
+The toolchain, the `shared/` kernel, and the boundary enforcement are in and green. Phase 1 (`identity`) is next.
 
-The four-modules-at-once version got argued down to one wedge that has to earn the rest.
+The plan came first on purpose. The original pitch was four simultaneous marketplaces on one campus, which is the most reliable way to build nothing at all — it got argued down to one wedge that has to earn the rest.
 
-| Doc | What it settles |
-|---|---|
-| [PRD](docs/PRD.md) | Scope, requirements, non-goals, risk register |
-| [Architecture](docs/ARCHITECTURE.md) | Modules, layering, boundaries, SOLID/DRY in practice |
-| [Engineering roadmap](docs/ENGINEERING_ROADMAP.md) | Build order, phase gates, definition of done |
-| [ADRs](docs/adr/) | Why the non-obvious calls were made |
+```
+npm install && npm run verify     # typecheck → lint → boundaries → tests
+```
+
+| Doc                                                | What it settles                                      |
+| -------------------------------------------------- | ---------------------------------------------------- |
+| [PRD](docs/PRD.md)                                 | Scope, requirements, non-goals, risk register        |
+| [Architecture](docs/ARCHITECTURE.md)               | Modules, layering, boundaries, SOLID/DRY in practice |
+| [Engineering roadmap](docs/ENGINEERING_ROADMAP.md) | Build order, phase gates, definition of done         |
+| [ADRs](docs/adr/)                                  | Why the non-obvious calls were made                  |
 
 ---
 
 ## Roadmap
 
-Each phase is gated on the last one working. Not on it being finished — on it being *used*.
+Each phase is gated on the last one working. Not on it being finished — on it being _used_.
 
-| Phase | What ships | Gate to advance |
-|---|---|---|
-| **1** | Project discovery, builder profiles, campus-wide Good First Issues | 150 users · 200 projects · 30% return · 10 real connections |
-| **1.5** | Manual seeding before launch | A search that returns nothing is dead on arrival |
-| **2** | Knowledge hub, final-year archive | Actively searched, not just filled |
-| **3** | Peer gig board | 5 accepted gigs in 6 weeks, or it gets deleted |
-| **4** | Tool board — free student licenses first | — |
+| Phase   | What ships                                                         | Gate to advance                                             |
+| ------- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| **1**   | Project discovery, builder profiles, campus-wide Good First Issues | 150 users · 200 projects · 30% return · 10 real connections |
+| **1.5** | Manual seeding before launch                                       | A search that returns nothing is dead on arrival            |
+| **2**   | Knowledge hub, final-year archive                                  | Actively searched, not just filled                          |
+| **3**   | Peer gig board                                                     | 5 accepted gigs in 6 weeks, or it gets deleted              |
+| **4**   | Tool board — free student licenses first                           | —                                                           |
 
 If a gate isn't met, the work is to fix that phase. Not to start the next one.
 

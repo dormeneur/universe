@@ -19,9 +19,7 @@ Domain errors are typed unions, so the compiler catches unhandled cases when a n
 
 ```ts
 export type PublishError =
-  | { kind: 'not_owner' }
-  | { kind: 'unacknowledged_fork' }
-  | { kind: 'missing_one_liner' };
+  { kind: 'not_owner' } | { kind: 'unacknowledged_fork' } | { kind: 'missing_one_liner' };
 ```
 
 `throw` is reserved for the genuinely unreachable — a missing environment variable, a corrupt row, a violated invariant. Those should crash loudly and get fixed, not be caught and logged.
@@ -67,7 +65,7 @@ Duplication costs something. The wrong abstraction costs more, because it couple
 - **Similar shape is not shared meaning.** `gigs.expiresAt` and `tools.expiresAt` are both timestamps that will diverge — 30 days for liquidity, 14 for safety. A shared `Expirable` couples two unrelated policies and makes each harder to change.
 - **`shared/` is for the genuinely universal only:** `Result`, `Clock`, `Logger`, IDs, formatting. If it names a domain concept, it doesn't belong there.
 
-The question before extracting: *will these call sites change for the same reason?* If not, leave the duplication.
+The question before extracting: _will these call sites change for the same reason?_ If not, leave the duplication.
 
 ## Functions
 
@@ -96,7 +94,7 @@ The question before extracting: *will these call sites change for the same reaso
 
 ## Comments
 
-Explain *why*, never *what*. A comment restating the code is maintenance debt; a comment explaining why global stars are excluded from ranking, or why cross-schema FKs are avoided, saves a future reader real time.
+Explain _why_, never _what_. A comment restating the code is maintenance debt; a comment explaining why global stars are excluded from ranking, or why cross-schema FKs are avoided, saves a future reader real time.
 
 Anything non-obvious enough to need a paragraph belongs in `docs/adr/` with a pointer from the code.
 

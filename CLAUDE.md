@@ -4,12 +4,12 @@ Campus-scoped project discovery for student developers. Free utility, single cam
 
 **Read before building anything:**
 
-| Doc | What it settles |
-|---|---|
-| [docs/PRD.md](docs/PRD.md) | Scope, requirements, non-goals, risk register |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module map, layering, boundaries, SOLID/DRY rules |
-| [docs/ENGINEERING_ROADMAP.md](docs/ENGINEERING_ROADMAP.md) | Build order, phase gates, definition of done |
-| [docs/adr/](docs/adr/) | Why non-obvious decisions were made |
+| Doc                                                        | What it settles                                   |
+| ---------------------------------------------------------- | ------------------------------------------------- |
+| [docs/PRD.md](docs/PRD.md)                                 | Scope, requirements, non-goals, risk register     |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)               | Module map, layering, boundaries, SOLID/DRY rules |
+| [docs/ENGINEERING_ROADMAP.md](docs/ENGINEERING_ROADMAP.md) | Build order, phase gates, definition of done      |
+| [docs/adr/](docs/adr/)                                     | Why non-obvious decisions were made               |
 
 ## Skills
 

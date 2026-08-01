@@ -41,18 +41,18 @@ src/
 
 ### 2.1 Module ownership
 
-| Module | Owns | Depends on | Phase |
-|---|---|---|---|
-| `identity` | Users, verification, sessions, roles | — | 1 |
-| `catalog` | Projects, tags, members | `identity` | 2 |
-| `sync` | GitHub install state, sync runs | `catalog` (via events) | 2 |
-| `moderation` | Reports, actions | `identity` | 2 |
-| `discovery` | Search index, ranking config | `catalog`, `identity` | 3 |
-| `profiles` | *nothing* | `identity`, `catalog` | 3 |
-| `knowledge` | Guides, revisions, prompts | `identity` | 4 |
-| `archive` | Archive entries | `identity` | 4 |
-| `gigs` | Listings, interests, reviews | `identity` | 5 |
-| `tools` | Directory, group-buys, listings | `identity` | 6 |
+| Module       | Owns                                 | Depends on             | Phase |
+| ------------ | ------------------------------------ | ---------------------- | ----- |
+| `identity`   | Users, verification, sessions, roles | —                      | 1     |
+| `catalog`    | Projects, tags, members              | `identity`             | 2     |
+| `sync`       | GitHub install state, sync runs      | `catalog` (via events) | 2     |
+| `moderation` | Reports, actions                     | `identity`             | 2     |
+| `discovery`  | Search index, ranking config         | `catalog`, `identity`  | 3     |
+| `profiles`   | _nothing_                            | `identity`, `catalog`  | 3     |
+| `knowledge`  | Guides, revisions, prompts           | `identity`             | 4     |
+| `archive`    | Archive entries                      | `identity`             | 4     |
+| `gigs`       | Listings, interests, reviews         | `identity`             | 5     |
+| `tools`      | Directory, group-buys, listings      | `identity`             | 6     |
 
 `profiles` is deliberately a **composition module**: it owns no tables and no domain state. It assembles a view from `identity` and `catalog` public APIs. Worth naming explicitly, because the instinct will be to give it a table — and the moment it has one, user data lives in two places and they drift.
 
@@ -78,7 +78,7 @@ domain  ←  application  ←  infrastructure
                        ←  presentation
 ```
 
-Arrows are the *only* permitted direction.
+Arrows are the _only_ permitted direction.
 
 - `domain/` imports nothing but `shared/kernel`. No Drizzle, no React, no `next/*`, no other module.
 - `application/` imports `domain/` and its own port interfaces. Never a concrete adapter.
@@ -93,8 +93,7 @@ The payoff is concrete: your ranking rules, verification state machine, and expi
 ```ts
 // modules/catalog/domain/project.ts
 export type ProjectStatus =
-  | 'active' | 'seeking_contributors' | 'looking_for_teammates'
-  | 'complete' | 'dormant';
+  'active' | 'seeking_contributors' | 'looking_for_teammates' | 'complete' | 'dormant';
 
 export function canPublish(p: Project, actor: UserId): Result<void, PublishError> {
   if (p.ownerId !== actor) return err({ kind: 'not_owner' });
@@ -115,9 +114,10 @@ export function makePublishProject(deps: {
   events: EventPublisher;
   clock: Clock;
 }) {
-  return async function publishProject(
-    input: { projectId: ProjectId; actor: UserId },
-  ): Promise<Result<Project, PublishError | NotFoundError>> {
+  return async function publishProject(input: {
+    projectId: ProjectId;
+    actor: UserId;
+  }): Promise<Result<Project, PublishError | NotFoundError>> {
     const project = await deps.projects.byId(input.projectId);
     if (!project) return err({ kind: 'not_found' });
 
@@ -156,16 +156,19 @@ If it isn't in `index.ts`, no other module may touch it. Keeping this file small
 Applied, not recited.
 
 ### Single Responsibility
+
 One use case per file, one exported factory. The test is "what would make me edit this file?" — if there are two answers, split it.
 
 `publish-project.ts`, `import-repositories.ts`, `sync-issues.ts` — not `project-service.ts` with fourteen methods, which is where this always ends up otherwise.
 
 ### Open/Closed
+
 Behaviour extends through new adapters, not edits to existing use cases.
 
 Adding GitLab support means writing `GitLabSourceAdapter implements ProjectSourcePort` and registering it. `importRepositories` does not change and does not grow a `switch`. If you find yourself adding a case to a conditional over source types, the port is missing.
 
 ### Liskov Substitution
+
 Every implementation of a port must be interchangeable — and this is verified, not assumed.
 
 **Contract tests** are the mechanism: one shared suite, run against both the real Drizzle repository and the in-memory fake.
@@ -174,9 +177,15 @@ Every implementation of a port must be interchangeable — and this is verified,
 // modules/catalog/application/ports/project-repository.contract.ts
 export function projectRepositoryContract(name: string, make: () => ProjectRepository) {
   describe(`ProjectRepository contract: ${name}`, () => {
-    it('returns null for an unknown id', async () => { /* ... */ });
-    it('round-trips a saved project', async () => { /* ... */ });
-    it('excludes dormant projects from listActive', async () => { /* ... */ });
+    it('returns null for an unknown id', async () => {
+      /* ... */
+    });
+    it('round-trips a saved project', async () => {
+      /* ... */
+    });
+    it('excludes dormant projects from listActive', async () => {
+      /* ... */
+    });
   });
 }
 ```
@@ -184,17 +193,25 @@ export function projectRepositoryContract(name: string, make: () => ProjectRepos
 Run it from both `drizzle-project-repository.test.ts` and `in-memory-project-repository.test.ts`. This is what makes fast tests trustworthy — without it, fakes drift from reality and green tests start lying.
 
 ### Interface Segregation
+
 Ports are narrow and named for what the consumer needs:
 
 ```ts
-export interface ProjectReader { byId(id: ProjectId): Promise<Project | null>; }
-export interface ProjectWriter { save(p: Project): Promise<void>; }
-export interface ProjectSearchIndex { reindex(id: ProjectId): Promise<void>; }
+export interface ProjectReader {
+  byId(id: ProjectId): Promise<Project | null>;
+}
+export interface ProjectWriter {
+  save(p: Project): Promise<void>;
+}
+export interface ProjectSearchIndex {
+  reindex(id: ProjectId): Promise<void>;
+}
 ```
 
 A read-only use case depends on `ProjectReader` alone. Its test then needs a fake with one method instead of twenty, which is what keeps writing tests cheap enough that you keep doing it.
 
 ### Dependency Inversion
+
 Use cases depend on interfaces they declare. Concrete adapters are constructed in exactly one place:
 
 ```ts
@@ -215,7 +232,7 @@ export const container = {
 
 ## 5. DRY — and where it turns harmful
 
-Duplication is a real cost. The wrong abstraction is a bigger one, because it couples things that only *looked* alike and every future change has to satisfy both callers.
+Duplication is a real cost. The wrong abstraction is a bigger one, because it couples things that only _looked_ alike and every future change has to satisfy both callers.
 
 Working rules:
 
@@ -224,7 +241,7 @@ Working rules:
 - **Similar shape is not shared meaning.** `gigs.expiresAt` and `tools.expiresAt` are both timestamps and will diverge — the tool board's expiry is 14 days for safety reasons, the gig board's is 30 for liquidity reasons. A shared `Expirable` base couples two unrelated policies.
 - **Only genuinely universal code goes in `shared/`.** `Result`, `Clock`, `Logger`, ID generation, date formatting. If it mentions a domain concept, it isn't shared.
 
-Before extracting an abstraction, ask whether the two call sites will change *for the same reason*. If not, leave the duplication.
+Before extracting an abstraction, ask whether the two call sites will change _for the same reason_. If not, leave the duplication.
 
 ---
 
@@ -233,19 +250,23 @@ Before extracting an abstraction, ask whether the two call sites will change *fo
 Three mechanisms, in order of preference.
 
 ### 6.1 Direct call through the public API
+
 For synchronous reads. `profiles` calls `catalog.listProjectsByOwner(userId)`.
 
 ```ts
-import { listProjectsByOwner } from '@/modules/catalog';   // legal
+import { listProjectsByOwner } from '@/modules/catalog'; // legal
 import { DrizzleProjectRepository } from '@/modules/catalog/infrastructure/...'; // fails lint
 ```
 
 ### 6.2 Domain events
+
 For side effects, so the emitter never learns who cares.
 
 ```ts
 // modules/catalog emits
-{ type: 'catalog.project_published', projectId, ownerId, at }
+{
+  type: ('catalog.project_published', projectId, ownerId, at);
+}
 
 // discovery subscribes → reindex
 // moderation subscribes → scan for policy violations
@@ -254,9 +275,11 @@ For side effects, so the emitter never learns who cares.
 In-process, synchronous, transactional. No queue, no broker — at this scale a `Map<EventType, Handler[]>` is the correct amount of infrastructure. Event names are namespaced by owning module and their payload types are exported from that module's `index.ts`.
 
 ### 6.3 Read models
-`discovery` maintains a denormalized search table joining catalog and identity data, rebuilt on events. This is the *only* sanctioned place data crosses module lines in the database, and it's one-way.
+
+`discovery` maintains a denormalized search table joining catalog and identity data, rebuilt on events. This is the _only_ sanctioned place data crosses module lines in the database, and it's one-way.
 
 ### 6.4 Forbidden
+
 - Importing another module's `domain/`, `application/`, or `infrastructure/`
 - Querying another module's tables directly
 - Cross-schema joins outside `discovery`'s read models
@@ -270,10 +293,10 @@ Each module owns a **Postgres schema**. The database enforces the boundary that 
 
 ```ts
 export const identitySchema = pgSchema('identity');
-export const catalogSchema  = pgSchema('catalog');
+export const catalogSchema = pgSchema('catalog');
 
-export const users    = identitySchema.table('users', { /* ... */ });
-export const projects = catalogSchema.table('projects', { /* ... */ });
+export const users = identitySchema.table('users', {/* ... */});
+export const projects = catalogSchema.table('projects', {/* ... */});
 ```
 
 Rules:
@@ -288,6 +311,7 @@ Rules:
 ## 8. Errors and validation
 
 ### Result over exceptions
+
 Expected failures are values. Exceptions are for bugs.
 
 ```ts
@@ -298,14 +322,13 @@ Domain errors are typed unions per module, so the compiler tells you when a new 
 
 ```ts
 export type PublishError =
-  | { kind: 'not_owner' }
-  | { kind: 'unacknowledged_fork' }
-  | { kind: 'missing_one_liner' };
+  { kind: 'not_owner' } | { kind: 'unacknowledged_fork' } | { kind: 'missing_one_liner' };
 ```
 
 `throw` is reserved for invariants that should be unreachable — a missing environment variable, a corrupt row. Those crash loudly and get fixed.
 
 ### Parse, don't validate
+
 Zod schemas sit at every boundary: server action inputs, route handler bodies, GitHub API responses, environment variables. Past the boundary, types are trusted because they were parsed once.
 
 Environment config is parsed at startup and fails fast. Discovering a missing variable at boot beats discovering it in a background job at 3am.
@@ -314,13 +337,13 @@ Environment config is parsed at startup and fails fast. Discovering a missing va
 
 ## 9. Testing
 
-| Layer | Kind | Dependencies | Speed | Coverage target |
-|---|---|---|---|---|
-| `domain/` | Pure unit | None | <1ms | High — this is where the rules are |
-| `application/` | Use case | In-memory fakes | <10ms | High |
-| `infrastructure/` | Integration | Real Postgres | ~100ms | Contract tests + queries |
-| `presentation/` | Thin | Fakes | fast | Happy path + auth |
-| E2E | Playwright | Full stack | slow | Critical journeys only |
+| Layer             | Kind        | Dependencies    | Speed  | Coverage target                    |
+| ----------------- | ----------- | --------------- | ------ | ---------------------------------- |
+| `domain/`         | Pure unit   | None            | <1ms   | High — this is where the rules are |
+| `application/`    | Use case    | In-memory fakes | <10ms  | High                               |
+| `infrastructure/` | Integration | Real Postgres   | ~100ms | Contract tests + queries           |
+| `presentation/`   | Thin        | Fakes           | fast   | Happy path + auth                  |
+| E2E               | Playwright  | Full stack      | slow   | Critical journeys only             |
 
 The shape follows from the architecture: if `domain/` is genuinely pure, most of your confidence comes from tests that finish before you lift your finger off the keyboard. If tests are slow, that's a signal logic has leaked out of `domain/` into places that need I/O.
 
@@ -333,33 +356,43 @@ Every port gets a contract test suite run against both its fake and its real imp
 Rules nobody checks are rules nobody follows.
 
 ### dependency-cruiser
+
 ```js
 forbidden: [
-  { name: 'domain-is-pure',
+  {
+    name: 'domain-is-pure',
     from: { path: '^src/modules/[^/]+/domain' },
-    to:   { pathNot: '^(src/modules/[^/]+/domain|src/shared)' } },
+    to: { pathNot: '^(src/modules/[^/]+/domain|src/shared)' },
+  },
 
-  { name: 'application-no-infrastructure',
+  {
+    name: 'application-no-infrastructure',
     from: { path: '^src/modules/[^/]+/application' },
-    to:   { path: '^src/modules/[^/]+/infrastructure' } },
+    to: { path: '^src/modules/[^/]+/infrastructure' },
+  },
 
-  { name: 'modules-use-public-api',
+  {
+    name: 'modules-use-public-api',
     from: { path: '^src/modules/([^/]+)' },
-    to:   { path: '^src/modules/(?!$1)[^/]+/(domain|application|infrastructure|presentation)' } },
+    to: { path: '^src/modules/(?!$1)[^/]+/(domain|application|infrastructure|presentation)' },
+  },
 
   { name: 'no-cycles', from: {}, to: { circular: true } },
 
-  { name: 'domain-no-frameworks',
+  {
+    name: 'domain-no-frameworks',
     from: { path: '^src/modules/[^/]+/domain' },
-    to:   { dependencyTypes: ['npm'],
-            pathNot: '^(zod|date-fns)$' } },
-]
+    to: { dependencyTypes: ['npm'], pathNot: '^(zod|date-fns)$' },
+  },
+];
 ```
 
 ### ESLint
+
 `no-restricted-imports` blocks deep paths into other modules, and blocks `drizzle-orm` and `next/*` outside their permitted layers.
 
 ### CI gate
+
 `typecheck → lint → depcruise → test → build`. Any failure blocks merge. The boundary check runs on every commit from week one — retrofitting boundaries onto a codebase that grew without them is a rewrite, and it never happens.
 
 ---
@@ -374,11 +407,11 @@ From Phase 0, not later:
 
 Performance budgets, enforced as tests once Phase 3 lands:
 
-| Operation | p95 |
-|---|---|
-| Search query | < 300ms |
-| Feed load | < 200ms |
-| Profile page | < 250ms |
+| Operation               | p95      |
+| ----------------------- | -------- |
+| Search query            | < 300ms  |
+| Feed load               | < 200ms  |
+| Profile page            | < 250ms  |
 | Daily sync (2000 users) | < 30 min |
 
 ---

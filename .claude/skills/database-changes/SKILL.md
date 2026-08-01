@@ -16,11 +16,11 @@ Each module declares its own schema in its own `infrastructure/schema.ts`. There
 export const catalogSchema = pgSchema('catalog');
 
 export const projects = catalogSchema.table('projects', {
-  id:        text('id').primaryKey(),
-  ownerId:   text('owner_id').notNull(),        // → identity.users(id)
-  name:      text('name').notNull(),
-  oneLiner:  varchar('one_liner', { length: 140 }).notNull(),
-  status:    text('status').$type<ProjectStatus>().notNull(),
+  id: text('id').primaryKey(),
+  ownerId: text('owner_id').notNull(), // → identity.users(id)
+  name: text('name').notNull(),
+  oneLiner: varchar('one_liner', { length: 140 }).notNull(),
+  status: text('status').$type<ProjectStatus>().notNull(),
   publishedAt: timestamp('published_at', { withTimezone: true }),
 });
 ```

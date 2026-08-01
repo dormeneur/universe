@@ -38,13 +38,13 @@ The reason this matters day to day: business rules that don't import a framework
 
 Ask what the code actually is:
 
-| The code… | Goes in |
-|---|---|
-| would still be true if the app were rewritten in Go | `domain/` |
-| coordinates fetch → decide → persist → emit | `application/` |
-| talks to Postgres, GitHub, or email | `infrastructure/` |
-| parses a request or renders UI | `presentation/` |
-| constructs concrete adapters | `composition/` |
+| The code…                                           | Goes in           |
+| --------------------------------------------------- | ----------------- |
+| would still be true if the app were rewritten in Go | `domain/`         |
+| coordinates fetch → decide → persist → emit         | `application/`    |
+| talks to Postgres, GitHub, or email                 | `infrastructure/` |
+| parses a request or renders UI                      | `presentation/`   |
+| constructs concrete adapters                        | `composition/`    |
 
 When unsure between `domain/` and `application/`: if it needs to `await` anything, it belongs in `application/`.
 
@@ -62,7 +62,9 @@ export function makePublishProject(deps: {
   events: EventPublisher;
   clock: Clock;
 }) {
-  return async function publishProject(input: PublishInput): Promise<Result<Project, PublishError>> {
+  return async function publishProject(
+    input: PublishInput,
+  ): Promise<Result<Project, PublishError>> {
     // fetch → apply domain rule → persist → emit
   };
 }
@@ -82,7 +84,7 @@ Three mechanisms, in order of preference.
 **Direct call through the public API** — for synchronous reads.
 
 ```ts
-import { listProjectsByOwner } from '@/modules/catalog';                      // legal
+import { listProjectsByOwner } from '@/modules/catalog'; // legal
 import { DrizzleProjectRepository } from '@/modules/catalog/infrastructure/…'; // fails lint
 ```
 

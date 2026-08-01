@@ -1,14 +1,14 @@
 # Uni-verse — Product Requirements Document
 
-| Field | Value |
-|---|---|
-| **Status** | Draft for build |
-| **Version** | 1.0 |
-| **Date** | 2026-07-31 |
-| **Owner** | Solo maintainer |
-| **Build capacity** | ~20 hrs/week, one developer |
-| **Target** | Single campus, ~2000+ dev-inclined students |
-| **Monetization** | None. Free utility. |
+| Field                    | Value                                                 |
+| ------------------------ | ----------------------------------------------------- |
+| **Status**               | Draft for build                                       |
+| **Version**              | 1.0                                                   |
+| **Date**                 | 2026-07-31                                            |
+| **Owner**                | Solo maintainer                                       |
+| **Build capacity**       | ~20 hrs/week, one developer                           |
+| **Target**               | Single campus, ~2000+ dev-inclined students           |
+| **Monetization**         | None. Free utility.                                   |
 | **Institutional status** | Unofficial. No faculty or administration involvement. |
 
 ---
@@ -19,19 +19,19 @@ Uni-verse is a free, campus-scoped web application that makes student engineerin
 
 Four modules ship in sequence. Module A is the product; the rest are extensions that only get built if A earns them.
 
-| Module | What it is | Phase |
-|---|---|---|
-| **A. Project Discovery & Builder Profiles** | Indexed, searchable catalogue of campus projects + developer profiles | 1 |
-| **D1. Knowledge Hub** | Campus-authored setup guides, conventions, and a free prompt library | 2 |
-| **A2. Project Archive** | Opt-in, attributed archive of completed final-year work | 2 |
-| **B. Peer Gig Board** | Bulletin board for paid peer technical work. No fees, no escrow. | 3 |
-| **C. Tool Access Board** | Group-buy coordination, free-license directory, and peer tool sharing | 4 |
+| Module                                      | What it is                                                            | Phase |
+| ------------------------------------------- | --------------------------------------------------------------------- | ----- |
+| **A. Project Discovery & Builder Profiles** | Indexed, searchable catalogue of campus projects + developer profiles | 1     |
+| **D1. Knowledge Hub**                       | Campus-authored setup guides, conventions, and a free prompt library  | 2     |
+| **A2. Project Archive**                     | Opt-in, attributed archive of completed final-year work               | 2     |
+| **B. Peer Gig Board**                       | Bulletin board for paid peer technical work. No fees, no escrow.      | 3     |
+| **C. Tool Access Board**                    | Group-buy coordination, free-license directory, and peer tool sharing | 4     |
 
 ### 1.1 The central design decision
 
 **Uni-verse does not host git.** It indexes GitHub.
 
-Hosting code would produce a strictly worse GitHub: no Actions, no package registries, no external visibility, and none of the recruiter reach that is the entire point of publishing work. The unmet need on campus is not *storage* — it is that nobody knows what anybody else is building. Uni-verse solves discovery and leaves hosting to the incumbent.
+Hosting code would produce a strictly worse GitHub: no Actions, no package registries, no external visibility, and none of the recruiter reach that is the entire point of publishing work. The unmet need on campus is not _storage_ — it is that nobody knows what anybody else is building. Uni-verse solves discovery and leaves hosting to the incumbent.
 
 ### 1.2 Business model
 
@@ -59,7 +59,7 @@ On a campus with 2000+ students who write code:
 
 ### 2.1 What already occupies this space
 
-The incumbent is **the WhatsApp group** — free, installed, and already holding the entire network. Discord and Telegram servers cover the rest. Any new surface has to be decisively better at *one* thing to pull attention out of a group chat.
+The incumbent is **the WhatsApp group** — free, installed, and already holding the entire network. Discord and Telegram servers cover the rest. Any new surface has to be decisively better at _one_ thing to pull attention out of a group chat.
 
 Uni-verse's one thing is **search over persistent, structured project data**. Group chats are catastrophically bad at this: a project mentioned in March is unrecoverable by May. That is the wedge, and it is the only claim of superiority this document makes.
 
@@ -100,13 +100,13 @@ Stated up front so it can be recognized honestly:
 
 ## 4. Users
 
-| Persona | Situation | Primary need | Modules |
-|---|---|---|---|
-| **The Builder** | Years 2–4, ships side projects, active GitHub | Visibility, contributors, a portfolio link | A, A2 |
-| **The Beginner** | Year 1–2, learning, no projects yet | See what's possible, find a first issue, find setup guides | A, D1 |
-| **The Contributor** | Competent, wants practice on real code | Find active campus projects with open issues in their stack | A |
-| **The Finalist** | Final year, doing a capstone | Reference prior work, publish their own, get discovered | A2 |
-| **The Alumnus** | Graduated within ~2 years | Keep their profile, stay reachable, contribute back | A, D1 |
+| Persona             | Situation                                     | Primary need                                                | Modules |
+| ------------------- | --------------------------------------------- | ----------------------------------------------------------- | ------- |
+| **The Builder**     | Years 2–4, ships side projects, active GitHub | Visibility, contributors, a portfolio link                  | A, A2   |
+| **The Beginner**    | Year 1–2, learning, no projects yet           | See what's possible, find a first issue, find setup guides  | A, D1   |
+| **The Contributor** | Competent, wants practice on real code        | Find active campus projects with open issues in their stack | A       |
+| **The Finalist**    | Final year, doing a capstone                  | Reference prior work, publish their own, get discovered     | A2      |
+| **The Alumnus**     | Graduated within ~2 years                     | Keep their profile, stay reachable, contribute back         | A, D1   |
 
 **Anti-persona:** external recruiters and non-students. Out of scope for all phases. The product is campus-internal.
 
@@ -118,7 +118,7 @@ No institutional cooperation is available, so verification must be entirely self
 
 ### 5.1 Two-factor campus identity
 
-**Primary: GitHub OAuth.** Chosen because it does three jobs at once — it authenticates, it demonstrates the user is a developer, and it yields the public repository graph that *is* Module A. No separate password system exists.
+**Primary: GitHub OAuth.** Chosen because it does three jobs at once — it authenticates, it demonstrates the user is a developer, and it yields the public repository graph that _is_ Module A. No separate password system exists.
 
 **Secondary: campus email verification.** A one-time code sent to an address on an allowlisted institutional domain (`*.ac.in`, `*.edu.in`, `*.edu`, or the specific domains this campus uses). This establishes campus membership.
 
@@ -149,11 +149,11 @@ The wedge. Everything else is contingent on this working.
 
 ### 6.1 Project ingestion
 
-- **A-1** — On first sign-in, the system imports the user's public GitHub repositories as *candidate* projects.
+- **A-1** — On first sign-in, the system imports the user's public GitHub repositories as _candidate_ projects.
 - **A-2** — Candidates are **not** published automatically. The user explicitly selects which to publish. This prevents the index filling with tutorial follow-alongs and abandoned scaffolds.
 - **A-3** — Users may create projects manually, without a repository, for work that isn't code on GitHub (hardware, design, research, coursework).
 - **A-4** — Published projects re-sync from GitHub daily via background job, plus immediately on user login.
-- **A-5** — Forks are detected via the GitHub API `fork` flag and are excluded from import by default. A user may publish a fork explicitly, and it is labelled as a fork in the UI. *Rationale: without this, the index fills with forks of popular repos that represent no student work.*
+- **A-5** — Forks are detected via the GitHub API `fork` flag and are excluded from import by default. A user may publish a fork explicitly, and it is labelled as a fork in the UI. _Rationale: without this, the index fills with forks of popular repos that represent no student work._
 - **A-6** — Repositories with no commits from the user in the trailing 12 months are imported as `dormant` and excluded from the default feed.
 
 ### 6.2 The enrichment layer
@@ -164,7 +164,7 @@ This is what distinguishes Uni-verse from a list of repository links. Each publi
 - **A-8** — Free-text tags plus structured facets: primary language (auto-derived), frameworks, department, academic year, associated course code (optional).
 - **A-9** — A one-line "what this actually does" description, required, max 140 characters, written by the student. Distinct from the GitHub description, which is usually empty or useless.
 - **A-10** — Optional "help wanted" note describing what kind of contribution is needed.
-- **A-11** — Team members can be credited by linking other Uni-verse profiles. Credited members must accept the credit before it appears. *Rationale: prevents both credit theft and unwanted association.*
+- **A-11** — Team members can be credited by linking other Uni-verse profiles. Credited members must accept the credit before it appears. _Rationale: prevents both credit theft and unwanted association._
 
 ### 6.3 Good First Issues
 
@@ -172,7 +172,7 @@ This is what distinguishes Uni-verse from a list of repository links. Each publi
 - **A-13** — A campus-wide "Good First Issues" view aggregates these across all published projects, filterable by language.
 - **A-14** — Issue entries link directly to GitHub. Uni-verse does not host discussion, comments, or issue state.
 
-This is the highest-leverage feature for The Beginner persona and the strongest single answer to "why not just browse GitHub" — GitHub cannot filter to *your campus*.
+This is the highest-leverage feature for The Beginner persona and the strongest single answer to "why not just browse GitHub" — GitHub cannot filter to _your campus_.
 
 ### 6.4 Builder profiles
 
@@ -186,7 +186,7 @@ This is the highest-leverage feature for The Beginner persona and the strongest 
 
 At 2000+ users, search quality is the product.
 
-- **A-20** — Full-text search across project name, description, tags, and README excerpt, implemented with **Postgres `tsvector` + GIN index**. Explicitly *not* Elasticsearch — at this data volume a dedicated search cluster is operational overhead with no user-visible benefit.
+- **A-20** — Full-text search across project name, description, tags, and README excerpt, implemented with **Postgres `tsvector` + GIN index**. Explicitly _not_ Elasticsearch — at this data volume a dedicated search cluster is operational overhead with no user-visible benefit.
 - **A-21** — Faceted filtering: language, framework, department, year, status, has-good-first-issues.
 - **A-22** — Default feed ranking blends: recency of last commit (heaviest weight), project status (`seeking contributors` boosted), profile completeness, presence of good-first-issues, and manual curation.
 - **A-23** — **Global GitHub star count is explicitly excluded as a primary ranking signal.** A campus project with 3 stars is more relevant here than a fork of a 50k-star framework. Stars may appear as displayed metadata but must not dominate ordering.
@@ -218,10 +218,10 @@ If these are not met, the correct response is to fix Module A, not to build Modu
 
 Free and community-owned. There is no prompt marketplace, no sales, no revenue share.
 
-*Rationale for cutting sales:* prompts are plaintext with no copy protection, they depreciate rapidly as models improve, and there is an infinite supply of excellent free alternatives (vendor documentation, open-source prompt collections, published agent skills). A paid prompt market on a free campus utility would be dead on arrival, and its failure would drag down the modules that work.
+_Rationale for cutting sales:_ prompts are plaintext with no copy protection, they depreciate rapidly as models improve, and there is an infinite supply of excellent free alternatives (vendor documentation, open-source prompt collections, published agent skills). A paid prompt market on a free campus utility would be dead on arrival, and its failure would drag down the modules that work.
 
 - **D-5** — Prompts are stored with required metadata: target model, date last tested, intended task, and author.
-- **D-6** — Prompts not re-tested within 6 months are automatically flagged `possibly stale` in the UI. *This directly addresses the depreciation problem that kills prompt collections.*
+- **D-6** — Prompts not re-tested within 6 months are automatically flagged `possibly stale` in the UI. _This directly addresses the depreciation problem that kills prompt collections._
 - **D-7** — Upvoting and "worked for me" confirmations, restricted to verified users, one per user per prompt.
 - **D-8** — Full-text search across the prompt library.
 
@@ -264,12 +264,12 @@ A bulletin board for legitimate paid technical work between students. **Not a ma
 ### 9.1 Requirements
 
 - **B-1** — Posters create requests with: title, description, required skills, budget range, deadline, and expected scope.
-- **B-2** — Interested students express interest; posters see interested profiles with their Module A project history attached. *The portfolio is the credential — this is the main advantage over an anonymous freelancing site.*
+- **B-2** — Interested students express interest; posters see interested profiles with their Module A project history attached. _The portfolio is the credential — this is the main advantage over an anonymous freelancing site._
 - **B-3** — On mutual acceptance, the two parties exchange contact details. Everything after that point is off-platform.
 - **B-4** — **No payment functionality of any kind.** No escrow, no wallet, no payment links, no fee. Parties settle directly (UPI or otherwise) with no platform involvement.
-- **B-5** — Listings auto-expire after 30 days unless renewed. *A visibly stale board is worse than no board; expiry is what prevents the "three listings from six weeks ago" death.*
+- **B-5** — Listings auto-expire after 30 days unless renewed. _A visibly stale board is worse than no board; expiry is what prevents the "three listings from six weeks ago" death._
 - **B-6** — Mutual reviews after a completed engagement, visible on profiles.
-- **B-7** — Review counts are displayed alongside every rating, and no aggregate rating is shown below 3 reviews. *At low volume, ratings are trivially gameable and a 5.0-from-one-review is actively misleading.*
+- **B-7** — Review counts are displayed alongside every rating, and no aggregate rating is shown below 3 reviews. _At low volume, ratings are trivially gameable and a 5.0-from-one-review is actively misleading._
 - **B-8** — Posting is limited to `verified` + `student` accounts. Alumni may not post or accept.
 - **B-9** — Rate limit: 3 active listings per user.
 
@@ -341,7 +341,7 @@ Two structural facts materially reduce — but do not eliminate — the platform
 1. **No fee is taken.** The platform does not profit from any arrangement. This is the difference between operating a commercial exchange built on induced breach of contract, and hosting a classifieds board. It is a meaningful legal distinction.
 2. **No credentials pass through the system.** The platform has no technical role in any access transfer.
 
-Neither fact protects the *participants*, whose ToS exposure and account-suspension risk are unchanged. That is what §10.3 exists to communicate.
+Neither fact protects the _participants_, whose ToS exposure and account-suspension risk are unchanged. That is what §10.3 exists to communicate.
 
 ---
 
@@ -349,16 +349,16 @@ Neither fact protects the *participants*, whose ToS exposure and account-suspens
 
 ### 11.1 Stack
 
-| Layer | Choice | Reasoning |
-|---|---|---|
-| Framework | Next.js (App Router), TypeScript | Single deployable, server components suit a read-heavy catalogue |
-| Database | Postgres (Supabase or Neon) | Full-text search built in; free tier sufficient at this scale |
-| ORM | Drizzle | Typed, lightweight, transparent SQL |
-| Auth | Auth.js with GitHub provider | GitHub OAuth is a first-class provider |
-| Background jobs | Vercel Cron or Inngest | Daily sync, expiry sweeps, staleness flagging |
-| Hosting | Vercel free tier | Adequate at this scale |
-| Email | Resend or Postmark | Verification codes only |
-| Files | Supabase Storage | Archive attachments only; not needed before Phase 2 |
+| Layer           | Choice                           | Reasoning                                                        |
+| --------------- | -------------------------------- | ---------------------------------------------------------------- |
+| Framework       | Next.js (App Router), TypeScript | Single deployable, server components suit a read-heavy catalogue |
+| Database        | Postgres (Supabase or Neon)      | Full-text search built in; free tier sufficient at this scale    |
+| ORM             | Drizzle                          | Typed, lightweight, transparent SQL                              |
+| Auth            | Auth.js with GitHub provider     | GitHub OAuth is a first-class provider                           |
+| Background jobs | Vercel Cron or Inngest           | Daily sync, expiry sweeps, staleness flagging                    |
+| Hosting         | Vercel free tier                 | Adequate at this scale                                           |
+| Email           | Resend or Postmark               | Verification codes only                                          |
+| Files           | Supabase Storage                 | Archive attachments only; not needed before Phase 2              |
 
 ### 11.2 Data model (core entities)
 
@@ -409,17 +409,17 @@ Note the absence of any credentials, tokens-for-third-party-services, or payment
 
 ## 12. Risk register
 
-| ID | Risk | Severity | Mitigation | Residual |
-|---|---|---|---|---|
-| **R-1** | Module C Lane 3 facilitates ToS breaches; vendors could issue takedown demands | High | No fee taken, no credentials handled, mandatory disclosure, platform is a bulletin board only | **Accepted by maintainer.** Real but reduced. Lane 3 is removable without affecting Lanes 1–2 or any other module. |
-| **R-2** | Students using Lane 3 get accounts suspended and lose money | High | §10.3 disclosure shown to both parties per listing | **Accepted.** Cannot be eliminated; it is inherent to the mechanic. |
-| **R-3** | Gig board disputes escalate into interpersonal conflict on a shared campus, blamed on the platform | Medium | Explicit non-guarantees in UI, no fee, no custody, portfolio-based reputation | Accepted. Small campus makes this likelier, not less likely. |
-| **R-4** | Institution views the archive as facilitating misconduct | Medium | Author-opt-in, mandatory attribution, campus-only visibility, immediate takedown, detectability-based deterrence (§8.2) | Accepted. Faculty backing would resolve this; it isn't available. |
-| **R-5** | Boards sit empty and make the whole product look dead | Medium | Auto-expiry (B-5, C-6); boards are phase-gated behind Module A succeeding; removal is an accepted outcome | Managed |
-| **R-6** | GitHub rate limits stall sync at 2000+ users | Medium | GitHub App rather than OAuth App (§5.3), batching, backoff, daily rather than continuous cadence | Managed |
-| **R-7** | Solo moderation doesn't scale; abusive or spam content persists | Medium | Verified-only posting, per-user posting caps, report queue on every entity, auto-expiry limiting blast radius | Managed |
-| **R-8** | 100% annual user churn through graduation | Low (given free utility) | Alumni role preserves profiles; each cohort onboards independently | Accepted — structural, and largely harmless for a non-growth product |
-| **R-9** | Nobody publishes projects; index stays empty | High | Single-player profile value (A-18); seeded manually by the maintainer at launch (§13.1) | The main product risk. Everything else is secondary. |
+| ID      | Risk                                                                                               | Severity                 | Mitigation                                                                                                              | Residual                                                                                                           |
+| ------- | -------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **R-1** | Module C Lane 3 facilitates ToS breaches; vendors could issue takedown demands                     | High                     | No fee taken, no credentials handled, mandatory disclosure, platform is a bulletin board only                           | **Accepted by maintainer.** Real but reduced. Lane 3 is removable without affecting Lanes 1–2 or any other module. |
+| **R-2** | Students using Lane 3 get accounts suspended and lose money                                        | High                     | §10.3 disclosure shown to both parties per listing                                                                      | **Accepted.** Cannot be eliminated; it is inherent to the mechanic.                                                |
+| **R-3** | Gig board disputes escalate into interpersonal conflict on a shared campus, blamed on the platform | Medium                   | Explicit non-guarantees in UI, no fee, no custody, portfolio-based reputation                                           | Accepted. Small campus makes this likelier, not less likely.                                                       |
+| **R-4** | Institution views the archive as facilitating misconduct                                           | Medium                   | Author-opt-in, mandatory attribution, campus-only visibility, immediate takedown, detectability-based deterrence (§8.2) | Accepted. Faculty backing would resolve this; it isn't available.                                                  |
+| **R-5** | Boards sit empty and make the whole product look dead                                              | Medium                   | Auto-expiry (B-5, C-6); boards are phase-gated behind Module A succeeding; removal is an accepted outcome               | Managed                                                                                                            |
+| **R-6** | GitHub rate limits stall sync at 2000+ users                                                       | Medium                   | GitHub App rather than OAuth App (§5.3), batching, backoff, daily rather than continuous cadence                        | Managed                                                                                                            |
+| **R-7** | Solo moderation doesn't scale; abusive or spam content persists                                    | Medium                   | Verified-only posting, per-user posting caps, report queue on every entity, auto-expiry limiting blast radius           | Managed                                                                                                            |
+| **R-8** | 100% annual user churn through graduation                                                          | Low (given free utility) | Alumni role preserves profiles; each cohort onboards independently                                                      | Accepted — structural, and largely harmless for a non-growth product                                               |
+| **R-9** | Nobody publishes projects; index stays empty                                                       | High                     | Single-player profile value (A-18); seeded manually by the maintainer at launch (§13.1)                                 | The main product risk. Everything else is secondary.                                                               |
 
 ---
 
@@ -428,25 +428,31 @@ Note the absence of any credentials, tokens-for-third-party-services, or payment
 Solo, ~20 hrs/week. Estimates are working weeks.
 
 ### Phase 0 — Foundation (weeks 1–2)
+
 Repo setup, schema, GitHub App registration, Auth.js integration, campus email verification, deploy pipeline, admin role.
 **Exit:** a user can sign in with GitHub, verify a campus email, and see an empty profile.
 
 ### Phase 1 — Discovery & Profiles (weeks 3–9)
+
 GitHub import with fork/dormancy filtering, publish flow, enrichment fields, builder profiles, Postgres full-text search, faceted filters, activity feed, Good First Issues view, daily sync job, report queue.
 **Exit:** §6.6 criteria met. **Do not begin Phase 2 before this.**
 
 ### Phase 1.5 — Seeding & launch (weeks 10–11)
-Manually index 50–100 known campus projects before public launch, with owner permission. Onboard 20 active builders directly. *A search product that returns nothing on its first query is dead on arrival — this step is not optional.*
+
+Manually index 50–100 known campus projects before public launch, with owner permission. Onboard 20 active builders directly. _A search product that returns nothing on its first query is dead on arrival — this step is not optional._
 
 ### Phase 2 — Knowledge Hub & Archive (weeks 12–17)
+
 Markdown guides with revisions and staleness flags, prompt library with model/date metadata and stale-flagging, archive with opt-in upload, attribution, and takedown.
 **Exit:** 30+ guides or prompts, 20+ archive entries, both actively searched.
 
 ### Phase 3 — Gig Board (weeks 18–22)
+
 Listings, interest flow, contact exchange, reviews with count thresholds, expiry, acceptable-use enforcement.
 **Exit:** 10+ listings with at least 5 reaching mutual acceptance in the first 6 weeks. If not, remove the module.
 
 ### Phase 4 — Tool Board (weeks 23–27)
+
 Lane 1 directory first and shipped independently. Lane 2 group-buy. Lane 3 only after Lanes 1–2 are live, with the §10.3 disclosure implemented before any listing can be created.
 
 ### 13.1 Sequencing principle
@@ -458,6 +464,7 @@ Each phase is gated on the previous phase's exit criteria. The failure mode this
 ## 14. Metrics
 
 **Phase 1 (primary):**
+
 - Verified users; published projects; median projects per active user
 - Profile completion rate
 - Weekly search sessions; searches returning zero results (target: under 15%)
@@ -484,13 +491,13 @@ Each phase is gated on the previous phase's exit criteria. The failure mode this
 
 ## Appendix A — Changes from the original proposal
 
-| Original | Now | Why |
-|---|---|---|
-| Campus GitHub (hosting) | GitHub index + discovery layer | A walled-garden git host is strictly worse than GitHub and removes the external visibility that motivates publishing |
-| Platform commission on gigs | No fees | Free utility; also removes escrow, payment-aggregator licensing, GST, and TDS obligations |
-| Escrow for peer payments | No payment handling at all | Follows from the above; parties settle directly |
-| "Or complete assignments" | Explicitly prohibited (§9.4) | Contract cheating: an integrity violation everywhere, illegal to operate commercially in several jurisdictions, and fatal to the platform's defensibility |
-| Paid prompt marketplace | Free prompt library with staleness tracking | Prompts are uncopyable plaintext that depreciates with each model release, against infinite free supply |
-| Subscription rental as headline feature | Three-lane tool board; free licenses first, sharing last | Most demand is satisfied by education programs students already qualify for; sharing lane retained per maintainer decision with full disclosure |
-| All four modules at launch | Strict phase gating on Module A | Four simultaneous cold starts is the most reliable way to build nothing |
-| `@college.edu` verification | GitHub OAuth + configurable domain allowlist + manual fallback | No institutional cooperation available; `.edu` is US-only and many institutions issue no usable student email |
+| Original                                | Now                                                            | Why                                                                                                                                                       |
+| --------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Campus GitHub (hosting)                 | GitHub index + discovery layer                                 | A walled-garden git host is strictly worse than GitHub and removes the external visibility that motivates publishing                                      |
+| Platform commission on gigs             | No fees                                                        | Free utility; also removes escrow, payment-aggregator licensing, GST, and TDS obligations                                                                 |
+| Escrow for peer payments                | No payment handling at all                                     | Follows from the above; parties settle directly                                                                                                           |
+| "Or complete assignments"               | Explicitly prohibited (§9.4)                                   | Contract cheating: an integrity violation everywhere, illegal to operate commercially in several jurisdictions, and fatal to the platform's defensibility |
+| Paid prompt marketplace                 | Free prompt library with staleness tracking                    | Prompts are uncopyable plaintext that depreciates with each model release, against infinite free supply                                                   |
+| Subscription rental as headline feature | Three-lane tool board; free licenses first, sharing last       | Most demand is satisfied by education programs students already qualify for; sharing lane retained per maintainer decision with full disclosure           |
+| All four modules at launch              | Strict phase gating on Module A                                | Four simultaneous cold starts is the most reliable way to build nothing                                                                                   |
+| `@college.edu` verification             | GitHub OAuth + configurable domain allowlist + manual fallback | No institutional cooperation available; `.edu` is US-only and many institutions issue no usable student email                                             |

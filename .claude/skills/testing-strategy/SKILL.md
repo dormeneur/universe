@@ -9,13 +9,13 @@ The architecture exists partly to make testing cheap. If tests are painful to wr
 
 ## What gets tested where
 
-| Layer | Kind | Dependencies | Speed | Aim for |
-|---|---|---|---|---|
-| `domain/` | Pure unit | None | <1ms | High coverage — the rules live here |
-| `application/` | Use case | In-memory fakes | <10ms | High coverage |
-| `infrastructure/` | Integration | Real Postgres | ~100ms | Contract + query correctness |
-| `presentation/` | Thin | Fakes | fast | Happy path, auth, input validation |
-| E2E | Playwright | Full stack | slow | Critical journeys only |
+| Layer             | Kind        | Dependencies    | Speed  | Aim for                             |
+| ----------------- | ----------- | --------------- | ------ | ----------------------------------- |
+| `domain/`         | Pure unit   | None            | <1ms   | High coverage — the rules live here |
+| `application/`    | Use case    | In-memory fakes | <10ms  | High coverage                       |
+| `infrastructure/` | Integration | Real Postgres   | ~100ms | Contract + query correctness        |
+| `presentation/`   | Thin        | Fakes           | fast   | Happy path, auth, input validation  |
+| E2E               | Playwright  | Full stack      | slow   | Critical journeys only              |
 
 Most of your confidence should come from the top two rows, which run in milliseconds. If it doesn't, logic has probably leaked out of `domain/` into places that need I/O — fix the design rather than adding more slow tests.
 
@@ -62,7 +62,7 @@ it('emits project_published when publication succeeds', async () => {
 });
 ```
 
-Prefer hand-written fakes over mocking libraries. A fake repository backed by a `Map` is a few lines, reads clearly, and doesn't couple the test to call order the way `expect(mock).toHaveBeenCalledWith(...)` does. Mock-heavy tests tend to assert *how* code works, which makes refactoring expensive — exactly the thing this architecture is trying to make cheap.
+Prefer hand-written fakes over mocking libraries. A fake repository backed by a `Map` is a few lines, reads clearly, and doesn't couple the test to call order the way `expect(mock).toHaveBeenCalledWith(...)` does. Mock-heavy tests tend to assert _how_ code works, which makes refactoring expensive — exactly the thing this architecture is trying to make cheap.
 
 ## Contract tests — the important one
 
@@ -72,10 +72,18 @@ A fake is only useful if it behaves like the real thing. Guarantee that with one
 // application/ports/project-repository.contract.ts
 export function projectRepositoryContract(name: string, make: () => Promise<ProjectRepository>) {
   describe(`ProjectRepository contract: ${name}`, () => {
-    it('returns null for an unknown id', async () => { /* … */ });
-    it('round-trips a saved project', async () => { /* … */ });
-    it('excludes dormant projects from listActive', async () => { /* … */ });
-    it('orders listActive by last commit, newest first', async () => { /* … */ });
+    it('returns null for an unknown id', async () => {
+      /* … */
+    });
+    it('round-trips a saved project', async () => {
+      /* … */
+    });
+    it('excludes dormant projects from listActive', async () => {
+      /* … */
+    });
+    it('orders listActive by last commit, newest first', async () => {
+      /* … */
+    });
   });
 }
 ```
@@ -112,8 +120,16 @@ Builder functions with sensible defaults and overrides, so a test states only wh
 
 ```ts
 export function makeProject(overrides: Partial<Project> = {}): Project {
-  return { id: 'p1', ownerId: 'u1', name: 'test', oneLiner: 'does a thing',
-           status: 'active', isFork: false, forkAcknowledged: false, ...overrides };
+  return {
+    id: 'p1',
+    ownerId: 'u1',
+    name: 'test',
+    oneLiner: 'does a thing',
+    status: 'active',
+    isFork: false,
+    forkAcknowledged: false,
+    ...overrides,
+  };
 }
 ```
 
@@ -132,11 +148,11 @@ A failing test name should tell you what broke without opening the file.
 
 From Phase 3, these are tests rather than aspirations — run against 2000 seeded projects:
 
-| Operation | p95 |
-|---|---|
-| Search | < 300ms |
-| Feed | < 200ms |
-| Profile | < 250ms |
+| Operation | p95     |
+| --------- | ------- |
+| Search    | < 300ms |
+| Feed      | < 200ms |
+| Profile   | < 250ms |
 
 ## When tests are hard to write
 
