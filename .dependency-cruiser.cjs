@@ -120,9 +120,17 @@ module.exports = {
       name: 'only-composition-touches-infrastructure',
       severity: 'error',
       comment:
-        'composition/ is the single place concrete adapters are constructed. App routes and other ' +
-        'modules must go through the container.',
-      from: { pathNot: ['^src/modules/[^/]+/infrastructure', '^src/composition'] },
+        'Concrete adapters are constructed in a composition file only — either the root ' +
+        'container or a module assembling its own adapters. App routes, use cases, and other ' +
+        'modules go through the container. Cross-module reach is blocked separately by ' +
+        'modules-use-public-api, so allowing a module its own composition.ts stays safe.',
+      from: {
+        pathNot: [
+          '^src/modules/[^/]+/infrastructure',
+          '^src/composition',
+          '^src/modules/[^/]+/composition\\.ts$',
+        ],
+      },
       to: { path: '^src/modules/[^/]+/infrastructure' },
     },
 

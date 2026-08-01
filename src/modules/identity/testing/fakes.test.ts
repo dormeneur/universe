@@ -8,4 +8,12 @@ import { InMemorySessionStore, InMemoryUserRepository } from './fakes';
  * gets wrong shows up here rather than in production.
  */
 userRepositoryContract('in-memory', () => Promise.resolve(new InMemoryUserRepository()));
-sessionStoreContract('in-memory', () => Promise.resolve(new InMemorySessionStore()));
+
+sessionStoreContract('in-memory', () =>
+  Promise.resolve({
+    store: new InMemorySessionStore(),
+    // The fake has no referential integrity to satisfy, so there is nothing
+    // to set up. The hook exists for the implementations that do.
+    ensureUser: () => Promise.resolve(),
+  }),
+);

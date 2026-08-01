@@ -30,6 +30,10 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/uniiverse_test
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/uniiverse_test
+      CAMPUS_EMAIL_DOMAINS: college.ac.in,*.college.ac.in
+      # No mail provider in CI, so codes go to the sink the e2e suite reads.
+      ALLOW_CONSOLE_MAIL: 'true'
+      DEV_MAIL_SINK: /tmp/uniiverse-e2e-mail.jsonl
 
     steps:
       - uses: actions/checkout@v4
@@ -59,8 +63,19 @@ jobs:
       - name: Unit tests
         run: npm run test
 
+      - name: Apply migrations
+        run: npm run db:migrate
+
       - name: Integration tests
         run: npm run test:integration
 
       - name: Build
         run: npm run build
+
+      # Installed after the cheaper gates pass, so a type error does not wait
+      # on a browser download.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e

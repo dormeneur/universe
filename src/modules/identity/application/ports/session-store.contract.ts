@@ -4,22 +4,45 @@ import type { UserId } from '../../domain/user';
 import { makeSession } from '../../testing/fixtures';
 import type { SessionStore } from './session-store';
 
-export function sessionStoreContract(name: string, make: () => Promise<SessionStore>): void {
+/**
+ * A session belongs to a user, and a real database enforces that with a
+ * foreign key. The contract therefore takes a setup hook that can bring the
+ * referenced users into existence — stating the precondition rather than
+ * assuming sessions float free.
+ *
+ * That assumption is precisely what an earlier version of this suite got
+ * wrong: it passed against the in-memory fake, which has no constraints, and
+ * failed the moment it met Postgres. Contract tests earn their keep here.
+ */
+export type SessionStoreHarness = {
+  readonly store: SessionStore;
+  /** Ensures a user row exists so sessions may reference it. */
+  ensureUser(userId: UserId): Promise<void>;
+};
+
+export function sessionStoreContract(name: string, make: () => Promise<SessionStoreHarness>): void {
   describe(`SessionStore contract: ${name}`, () => {
+    /** Sets up the harness with the given users already present. */
+    async function withUsers(...userIds: readonly UserId[]): Promise<SessionStore> {
+      const harness = await make();
+      for (const id of userIds) await harness.ensureUser(id);
+      return harness.store;
+    }
+
     it('returns null for an unknown token hash', async () => {
-      const store = await make();
+      const store = await withUsers();
       expect(await store.byTokenHash('nope')).toBeNull();
     });
 
     it('round-trips a saved session by token hash', async () => {
-      const store = await make();
+      const store = await withUsers('u1' as UserId);
       const session = makeSession({ id: 's-round' as SessionId, tokenHash: 'hash-a' });
       await store.save(session);
       expect(await store.byTokenHash('hash-a')).toEqual(session);
     });
 
     it('overwrites rather than duplicating when saving an existing id', async () => {
-      const store = await make();
+      const store = await withUsers('u1' as UserId);
       const session = makeSession({ id: 's-touch' as SessionId, tokenHash: 'hash-b' });
       await store.save(session);
 
@@ -30,7 +53,7 @@ export function sessionStoreContract(name: string, make: () => Promise<SessionSt
     });
 
     it('revokes every live session for a user', async () => {
-      const store = await make();
+      const store = await withUsers('u1' as UserId);
       const at = new Date('2026-07-02T00:00:00.000Z');
       await store.save(
         makeSession({ id: 's1' as SessionId, userId: 'u1' as UserId, tokenHash: 'h1' }),
@@ -46,7 +69,7 @@ export function sessionStoreContract(name: string, make: () => Promise<SessionSt
     });
 
     it('leaves other users’ sessions alone when revoking', async () => {
-      const store = await make();
+      const store = await withUsers('u1' as UserId, 'u2' as UserId);
       await store.save(
         makeSession({ id: 's1' as SessionId, userId: 'u1' as UserId, tokenHash: 'h1' }),
       );
@@ -60,7 +83,7 @@ export function sessionStoreContract(name: string, make: () => Promise<SessionSt
     });
 
     it('does not move the revocation time of an already-revoked session', async () => {
-      const store = await make();
+      const store = await withUsers('u1' as UserId);
       const first = new Date('2026-07-02T00:00:00.000Z');
       await store.save(
         makeSession({
@@ -77,7 +100,7 @@ export function sessionStoreContract(name: string, make: () => Promise<SessionSt
     });
 
     it('deletes sessions that expired before the cutoff', async () => {
-      const store = await make();
+      const store = await withUsers('u1' as UserId);
       const created = new Date('2026-01-01T00:00:00.000Z');
       await store.save(
         makeSession({
@@ -95,7 +118,7 @@ export function sessionStoreContract(name: string, make: () => Promise<SessionSt
     });
 
     it('keeps sessions that have not yet expired', async () => {
-      const store = await make();
+      const store = await withUsers('u1' as UserId);
       await store.save(
         makeSession({
           id: 's-live' as SessionId,

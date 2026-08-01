@@ -16,6 +16,45 @@ const ConfigSchema = z.object({
 
   /** Postgres connection string. */
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+
+  /**
+   * Institutional domains that grant immediate access. Comma-separated;
+   * entries may be exact (`college.ac.in`) or suffix wildcards (`*.ac.in`).
+   * Anything outside the list goes to manual review rather than being
+   * rejected, so this can be edited without a deploy (PRD ID-4).
+   */
+  CAMPUS_EMAIL_DOMAINS: z
+    .string()
+    .default('')
+    .transform((raw) =>
+      raw
+        .split(',')
+        .map((d) => d.trim())
+        .filter((d) => d.length > 0),
+    ),
+
+  /** Omit in development and sign-in codes are logged instead of emailed. */
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().default('Uni-verse <onboarding@resend.dev>'),
+
+  /**
+   * Explicit permission to log sign-in codes instead of emailing them.
+   *
+   * Required whenever RESEND_API_KEY is absent. It exists so that a deploy
+   * missing its mail configuration fails loudly at startup rather than
+   * quietly writing every account's sign-in code to the log.
+   */
+  ALLOW_CONSOLE_MAIL: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+
+  /**
+   * A file the console mailer appends sign-in codes to, so local work and
+   * end-to-end tests can read them without a real inbox — the same idea as
+   * running Mailpit.
+   */
+  DEV_MAIL_SINK: z.string().optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
